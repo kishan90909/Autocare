@@ -1,0 +1,245 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Workshop Invoices - AutoCare Comprehensive System</title>
+
+  <!-- Bootstrap CSS (CDN) -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+  <!-- Font Awesome for Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Your custom CSS -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+
+  <!-- jQuery (CDN) -->
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+  <!-- Bootstrap JS (CDN) -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</head>
+<body>
+  <!-- Navbar -->
+  <nav class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top">
+    <div class="container">
+      <a class="navbar-brand" href="{{ url_for('index') }}">
+        <i class="fas fa-car me-2"></i>AutoCare
+      </a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#nav" aria-controls="nav" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="nav">
+        <ul class="navbar-nav me-auto">
+          <li class="nav-item">
+            <a class="nav-link" href="{{ url_for('index') }}">
+              <i class="fas fa-home me-1"></i>Home
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="{{ url_for('about') }}">
+              <i class="fas fa-info-circle me-1"></i>About
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="{{ url_for('locate_garages') }}">
+              <i class="fas fa-map-marker-alt me-1"></i>Find Garages
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="{{ url_for('contact') }}">
+              <i class="fas fa-phone me-1"></i>Contact
+            </a>
+          </li>
+        </ul>
+        <ul class="navbar-nav ms-auto">
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" href="#" id="workshopDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+              <i class="fas fa-tools me-1"></i>{{ session.get('username') }}
+            </a>
+            <ul class="dropdown-menu" aria-labelledby="workshopDropdown">
+              <li><a class="dropdown-item" href="{{ url_for('workshop_dashboard') }}">
+                <i class="fas fa-tachometer-alt me-2"></i>Dashboard
+              </a></li>
+              <li><a class="dropdown-item" href="{{ url_for('workshop_bookings') }}">
+                <i class="fas fa-list me-2"></i>Bookings
+              </a></li>
+              <li><a class="dropdown-item active" href="{{ url_for('workshop_invoices') }}">
+                <i class="fas fa-file-invoice me-2"></i>Invoices
+              </a></li>
+              <li><hr class="dropdown-divider"></li>
+              <li><a class="dropdown-item" href="{{ url_for('logout') }}">
+                <i class="fas fa-sign-out-alt me-2"></i>Logout
+              </a></li>
+            </ul>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Flash Messages -->
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      {% for category, message in messages %}
+        <div class="alert alert-{{ 'success' if category == 'success' else 'danger' if category == 'error' else 'info' }} alert-dismissible fade show" role="alert">
+          {{ message }}
+          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+      {% endfor %}
+    {% endif %}
+  {% endwith %}
+
+  <!-- Workshop Invoices -->
+  <div class="container py-5">
+    <div class="row">
+      <div class="col-12">
+        <h1 class="mb-4">
+          <i class="fas fa-file-invoice text-primary me-2"></i>Workshop Invoices
+        </h1>
+        <p class="text-muted">Manage and generate invoices for completed services</p>
+      </div>
+    </div>
+
+    <!-- Workshop Info -->
+    <div class="row g-4 mb-5">
+      <div class="col-12">
+        <div class="card">
+          <div class="card-body">
+            <div class="row">
+              <div class="col-md-8">
+                <h5 class="card-title">{{ workshop.details.name }}</h5>
+                <p class="card-text text-muted mb-2">
+                  <i class="fas fa-map-marker-alt me-2"></i>{{ workshop.details.address }}
+                </p>
+                <p class="card-text text-muted mb-2">
+                  <i class="fas fa-phone me-2"></i>{{ workshop.details.phone }}
+                </p>
+              </div>
+              <div class="col-md-4 text-end">
+                <p class="mb-1"><strong>Total Invoices:</strong> {{ bookings|length }}</p>
+                <p class="mb-1"><strong>Status:</strong>
+                  <span class="badge bg-success">Active</span>
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Invoices List -->
+    <div class="row g-4">
+      <div class="col-12">
+        <div class="card">
+          <div class="card-header">
+            <h5 class="mb-0">
+              <i class="fas fa-file-invoice me-2"></i>Generated Invoices
+            </h5>
+          </div>
+          <div class="card-body">
+            {% if bookings %}
+              <div class="table-responsive">
+                <table class="table table-striped">
+                  <thead>
+                    <tr>
+                      <th>Booking ID</th>
+                      <th>Customer</th>
+                      <th>Services</th>
+                      <th>Total Amount</th>
+                      <th>Generated Date</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for booking in bookings %}
+                    <tr>
+                      <td>#{{ booking.id }}</td>
+                      <td>
+                        {% if booking.customer_info %}
+                          <div>
+                            <strong>{{ booking.customer_info.username }}</strong><br>
+                            <small class="text-muted">{{ booking.customer_info.email }}</small>
+                          </div>
+                        {% else %}
+                          <span class="text-muted">Customer info not available</span>
+                        {% endif %}
+                      </td>
+                      <td>
+                        {% for service in booking.services %}
+                          <span class="badge bg-secondary">{{ service.name }}</span>
+                        {% endfor %}
+                      </td>
+                      <td>₹{{ "%.2f"|format(booking.total_cost) }}</td>
+                      <td>
+                        {% if booking.invoice_generated_at %}
+                          {{ booking.invoice_generated_at.strftime('%Y-%m-%d %H:%M') }}
+                        {% else %}
+                          <span class="text-muted">N/A</span>
+                        {% endif %}
+                      </td>
+                      <td>
+                        <div class="btn-group" role="group">
+                          <a href="{{ url_for('workshop_invoice_preview', booking_id=booking.id) }}" class="btn btn-sm btn-outline-info" title="Preview Invoice">
+                            <i class="fas fa-eye"></i>
+                          </a>
+                          <a href="{{ url_for('workshop_generate_invoice', booking_id=booking.id) }}" class="btn btn-sm btn-outline-success" title="Download PDF">
+                            <i class="fas fa-download"></i>
+                          </a>
+                        </div>
+                      </td>
+                    </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+            {% else %}
+              <div class="alert alert-info">
+                <i class="fas fa-info-circle me-2"></i>No invoices generated yet. Complete some services to generate invoices!
+              </div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="row g-4 mt-4">
+      <div class="col-md-6">
+        <div class="card h-100">
+          <div class="card-body text-center">
+            <i class="fas fa-list fa-3x text-primary mb-3"></i>
+            <h5 class="card-title">Manage Bookings</h5>
+            <p class="card-text">View and update booking status</p>
+            <a href="{{ url_for('workshop_bookings') }}" class="btn btn-primary">View Bookings</a>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-6">
+        <div class="card h-100">
+          <div class="card-body text-center">
+            <i class="fas fa-chart-line fa-3x text-success mb-3"></i>
+            <h5 class="card-title">Performance</h5>
+            <p class="card-text">Track your workshop performance</p>
+            <a href="{{ url_for('workshop_performance') }}" class="btn btn-success">View Stats</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="bg-dark text-light py-4 mt-5">
+    <div class="container text-center">
+      <p>&copy; {{ datetime.utcnow().year }} AutoCare Comprehensive System. All rights reserved.</p>
+    </div>
+  </footer>
+
+  <!-- Custom JS -->
+  <script src="{{ url_for('static', filename='js/script_fixed.js') }}"></script>
+</body>
+</html>

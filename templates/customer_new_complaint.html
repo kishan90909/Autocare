@@ -1,0 +1,164 @@
+{% extends "base.html" %}
+
+{% block title %}New Complaint - AutoCare{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <!-- Sidebar -->
+        <nav class="col-md-2 d-none d-md-block bg-light sidebar">
+            <div class="sidebar-sticky">
+                <h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-4 mb-1 text-muted">
+                    <span>Customer Panel</span>
+                </h6>
+                <ul class="nav flex-column">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('customer_dashboard') }}">
+                            <i class="fas fa-tachometer-alt"></i> Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('book_service') }}">
+                            <i class="fas fa-plus-circle"></i> Book Service
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('customer_bookings') }}">
+                            <i class="fas fa-calendar-check"></i> My Bookings
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('customer_service_tracking') }}">
+                            <i class="fas fa-eye"></i> Track Services
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="{{ url_for('customer_complaints') }}">
+                            <i class="fas fa-exclamation-triangle"></i> My Complaints
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('customer_profile') }}">
+                            <i class="fas fa-user"></i> Profile
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </nav>
+
+        <!-- Main content -->
+        <main role="main" class="col-md-9 ml-sm-auto col-lg-10 px-4">
+            <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                <h1 class="h2">Submit New Complaint</h1>
+                <div class="btn-toolbar mb-2 mb-md-0">
+                    <a href="{{ url_for('customer_complaints') }}" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left"></i> Back to Complaints
+                    </a>
+                </div>
+            </div>
+
+            <!-- New Complaint Form -->
+            <div class="row">
+                <div class="col-lg-8">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">Complaint Details</h5>
+                        </div>
+                        <div class="card-body">
+                            <form method="POST">
+                                <div class="form-group">
+                                    <label for="subject">Subject *</label>
+                                    <input type="text" class="form-control" id="subject" name="subject"
+                                           placeholder="Brief description of your complaint" required>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="category">Category</label>
+                                    <select class="form-control" id="category" name="category">
+                                        <option value="general">General</option>
+                                        <option value="service_quality">Service Quality</option>
+                                        <option value="billing">Billing</option>
+                                        <option value="workshop">Workshop</option>
+                                        <option value="technical">Technical Issue</option>
+                                        <option value="other">Other</option>
+                                    </select>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="priority">Priority</label>
+                                    <select class="form-control" id="priority" name="priority">
+                                        <option value="low">Low</option>
+                                        <option value="medium">Medium</option>
+                                        <option value="high">High</option>
+                                    </select>
+                                </div>
+
+                                {% if bookings %}
+                                <div class="form-group">
+                                    <label for="booking_id">Related Booking (Optional)</label>
+                                    <select class="form-control" id="booking_id" name="booking_id">
+                                        <option value="">Select a booking</option>
+                                        {% for booking in bookings %}
+                                        <option value="{{ booking.id }}">
+                                            Booking #{{ booking.id }} - {{ booking.services|length }} service(s) - ₹{{ booking.total_cost }}
+                                        </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                {% endif %}
+
+                                <div class="form-group">
+                                    <label for="message">Message *</label>
+                                    <textarea class="form-control" id="message" name="message" rows="6"
+                                              placeholder="Please provide detailed description of your complaint..." required></textarea>
+                                </div>
+
+                                <div class="form-group">
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-paper-plane"></i> Submit Complaint
+                                    </button>
+                                    <a href="{{ url_for('customer_complaints') }}" class="btn btn-secondary ml-2">
+                                        Cancel
+                                    </a>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h6 class="mb-0">Help & Guidelines</h6>
+                        </div>
+                        <div class="card-body">
+                            <h6>What to include in your complaint:</h6>
+                            <ul class="small">
+                                <li>Clear description of the issue</li>
+                                <li>Booking reference if applicable</li>
+                                <li>Date and time of incident</li>
+                                <li>Any relevant details</li>
+                            </ul>
+
+                            <hr>
+
+                            <h6>Response Time:</h6>
+                            <ul class="small">
+                                <li>High Priority: Within 24 hours</li>
+                                <li>Medium Priority: Within 48 hours</li>
+                                <li>Low Priority: Within 72 hours</li>
+                            </ul>
+
+                            <hr>
+
+                            <p class="small text-muted">
+                                Our support team will review your complaint and respond as soon as possible.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+</div>
+{% endblock %}

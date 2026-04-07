@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}Calendar{% endblock %}
+{% block content %}
+<div class="container py-4">
+  <div class="card shadow">
+    <div class="card-header bg-dark text-white">
+      <h3 class="mb-0">📅 Bookings Calendar</h3>
+    </div>
+    <div class="card-body">
+      <div id="calendar"></div>
+    </div>
+  </div>
+</div>
+
+<link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/main.min.css" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/main.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  var calendarEl = document.getElementById('calendar');
+  var calendar = new FullCalendar.Calendar(calendarEl, {
+    initialView: 'dayGridMonth',
+    height: 650,
+    headerToolbar: {
+      left: 'prev,next today',
+      center: 'title',
+      right: 'dayGridMonth,timeGridWeek,timeGridDay'
+    },
+    events: '/api/bookings_calendar',
+    eventDidMount: function(info) {
+      // Tooltip with details
+      var tooltip = new bootstrap.Tooltip(info.el, {
+        title: info.event.extendedProps.customer + " — " + info.event.extendedProps.status,
+        placement: 'top',
+        trigger: 'hover',
+        container: 'body'
+      });
+      // Color by status
+      if (info.event.extendedProps.status === 'pending') {
+        info.el.style.backgroundColor = '#ffc107'; // yellow
+      } else if (info.event.extendedProps.status === 'accepted') {
+        info.el.style.backgroundColor = '#0dcaf0'; // blue
+      } else if (info.event.extendedProps.status === 'completed') {
+        info.el.style.backgroundColor = '#198754'; // green
+      } else if (info.event.extendedProps.status === 'rejected') {
+        info.el.style.backgroundColor = '#dc3545'; // red
+      }
+    }
+  });
+  calendar.render();
+});
+</script>
+{% endblock %}

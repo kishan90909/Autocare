@@ -1,0 +1,473 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Book Service - AutoCare Comprehensive System</title>
+
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap"
+    rel="stylesheet">
+
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</head>
+
+<body>
+
+  <nav class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top">
+    <div class="container">
+      <a class="navbar-brand" href="{{ url_for('index') }}">
+        <i class="fas fa-car me-2"></i>AutoCare
+      </a>
+    </div>
+  </nav>
+
+  <div class="container py-5">
+    <div class="row justify-content-center">
+      <div class="col-lg-10">
+        <div class="card shadow-lg">
+
+          <div class="card-header bg-primary text-white">
+            <h3 class="mb-0">
+              <i class="fas fa-calendar-plus me-2"></i>Book a Service
+            </h3>
+          </div>
+
+          <div class="card-body p-4">
+
+            <form method="post" id="bookingForm">
+              <!-- HIDDEN LOCATION FIELDS -->
+              <input type="hidden" id="latitude" name="latitude">
+              <input type="hidden" id="longitude" name="longitude">
+
+              <div class="mb-4">
+                <label class="form-label fw-bold text-primary">
+                  <i class="fas fa-map-marker-alt me-2"></i>Your Location
+                </label>
+
+                <div class="d-flex gap-2 align-items-center mb-2">
+
+                  <!-- 📍 LOCATION BUTTON -->
+                  <button type="button" onclick="getLocation()" class="btn btn-outline-primary" id="locationBtn">
+                    <i class="fas fa-location-arrow me-1"></i>Use My Location
+                  </button>
+
+                  <!-- 📍 LOCATION DISPLAY -->
+                  <div id="userLocation" class="fw-bold text-success"></div>
+
+                </div>
+
+                <small id="locationAccuracy" class="text-muted"></small>
+
+                <!-- WORKSHOP DROPDOWN -->
+                <!-- WORKSHOP + DIRECTION BUTTON -->
+                <div class="d-flex align-items-center mt-2 gap-2">
+
+                  <select name="workshop_id" id="workshopDropdown" class="form-select" required>
+                    <option value="">Click On My Location For Select Nearby Workshop</option>
+                  </select>
+
+                  <!-- 📍 GET DIRECTION BUTTON -->
+                  <button type="button" id="directionBtn" class="btn btn-success btn-lg shadow" style="min-width: 150px; transition: all 0.2s;">
+                    <i class="fas fa-directions me-2"></i>Get Directions 
+                    <span class="spinner-border spinner-border-sm ms-1 d-none" id="directionSpinner" role="status"></span>
+                  </button>
+
+                </div>
+
+                <div class="row mb-4 g-3">
+
+                  <div class="col-md-6">
+                    <label class="form-label fw-bold">
+                      <i class="fas fa-car me-2"></i>Select Vehicle Type
+                    </label>
+
+                    <select name="vehicle_type" id="vehicle_type" class="form-select" required>
+                      <option value="Bike" selected>Bike</option>
+                      <option value="Auto">Auto</option>
+                      <option value="Car">Car</option>
+                      <option value="Truck">Truck</option>
+                      <option value="Bus">Bus</option>
+                    </select>
+                  </div>
+
+                  <div class="col-md-6">
+                    <label class="form-label fw-bold">
+                      <i class="fas fa-calendar-alt me-2"></i>Select Service Date
+                    </label>
+                    <input type="date" name="preferred_date" id="preferred_date" class="form-control" required>
+                  </div>
+
+                </div>
+
+                <div class="row">
+                  {% for service in services %}
+                  <div class="col-md-6 col-lg-4 mb-4 service-card-wrapper">
+                    <div class="card h-100 service-card">
+                      <div class="card-body text-center">
+
+                        <h5 class="card-title">{{ service.name }}</h5>
+                        <p class="card-text text-muted">{{ service.description }}</p>
+
+                        <div class="service-price mb-3">
+                          <span class="h5 text-success">₹{{ "%.2f"|format(service.price) }}</span>
+                          <small class="text-muted">({{ service.duration }} min)</small>
+                        </div>
+
+                        <div class="form-check">
+                          <input class="form-check-input service-checkbox" type="checkbox" name="service_ids"
+                            value="{{ service.id }}" data-price="{{ service.price }}"
+                            data-vehicle="{{ service.vehicle_type if service.vehicle_type else 'all' }}">
+                          <label class="form-check-label">Select Service</label>
+                        </div>
+
+                      </div>
+                    </div>
+                  </div>
+                  {% endfor %}
+                </div>
+
+                <div class="row mt-4">
+                  <div class="col-12">
+                    <div class="card bg-light">
+                      <div class="card-body text-center">
+                        <h4>Booking Summary</h4>
+                        <p>Selected Services: <span id="selectedCount">0</span></p>
+                        <p>Total Duration: <span id="totalDuration">0</span> min</p>
+                        <h3 class="text-success">₹<span id="totalPrice">0.00</span></h3>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="text-center mt-4">
+                  <button type="submit" class="btn btn-success btn-lg px-5" id="bookButton" disabled>
+                    <i class="fas fa-calendar-check me-2"></i>Book Selected Services
+                  </button>
+                </div>
+
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer class="bg-dark text-light py-4 mt-5">
+    <div class="container text-center">
+      <p>&copy; {{ datetime.utcnow().year }} AutoCare Comprehensive System</p>
+    </div>
+  </footer>
+
+
+  <!-- ================= FIXED SCRIPT ================= -->
+  <script>
+
+    let directionBtn, dropdown;
+
+    // ================= GET LOCATION =================
+    function getLocation() {
+
+      console.log("🚀 getLocation function started");
+
+      if (!navigator.geolocation) {
+        alert("Geolocation not supported");
+        return;
+      }
+
+      navigator.geolocation.getCurrentPosition(
+        function (position) {
+
+          let lat = position.coords.latitude;
+          let lng = position.coords.longitude;
+          let accuracy = position.coords.accuracy;
+
+          document.getElementById("latitude").value = lat;
+          document.getElementById("longitude").value = lng;
+
+          let locationBtn = document.getElementById("locationBtn");
+
+          locationBtn.disabled = true;
+          locationBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Locating...';
+
+          // ================= ADDRESS =================
+          fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&addressdetails=1`)
+            .then(res => res.json())
+            .then(data => {
+
+              let a = data.address || {};
+
+              let city =
+                a.village || a.hamlet || a.locality ||
+                a.suburb || a.town || a.city ||
+                a.municipality || a.county || "";
+
+              let area =
+                a.suburb || a.neighbourhood ||
+                a.city_district || a.locality || "";
+
+              let text = city;
+              if (area && area !== city) text += ", " + area;
+
+              document.getElementById("userLocation").innerText =
+                "📍 " + (text || "Location found");
+
+              document.getElementById("locationAccuracy").innerText =
+                `Accuracy: ${accuracy.toFixed(0)}m`;
+            });
+
+          // ================= LOAD WORKSHOPS =================
+          console.log("🔥 CALLING WORKSHOP API...");
+
+          fetch(`/get_nearby_workshops?lat=${lat}&lng=${lng}`)
+            .then(res => res.json())
+            .then(data => {
+
+              console.log("🔥 WORKSHOP DATA:", data);
+
+              dropdown.innerHTML = "";
+
+              if (!data || data.length === 0) {
+                dropdown.innerHTML = "<option>No nearby workshops found</option>";
+                directionBtn.disabled = true;
+                return;
+              }
+
+              const defaultOption2 = document.createElement("option");
+              defaultOption2.value = "";
+              defaultOption2.text = "Select Workshop";
+              dropdown.appendChild(defaultOption2);
+
+// FIXED: ASYNC CITY FIRST → Workshops second (user request)
+              locationBtn.innerHTML = '<i class="fas fa-map-marker-alt me-1"></i>Loading city...';
+              
+              // 1. FIRST: Get CITY from GPS
+              fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&addressdetails=1`)
+                .then(res => res.json())
+                .then(cityData => {
+                  let a = cityData.address || {};
+                  let userCity = a.village || a.hamlet || a.locality || a.town || a.city || a.suburb || "Local Area";
+                  
+                  document.getElementById("userLocation").innerText = `📍 ${userCity}`;
+                  document.getElementById("locationAccuracy").innerText = `Accuracy: ${accuracy.toFixed(0)}m`;
+                  
+                  locationBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Loading workshops...';
+                  
+                  // 2. THEN: Get workshops for this city
+                  fetch(`/get_nearby_workshops?lat=${lat}&lng=${lng}`)
+                    .then(res => res.json())
+                    .then(data => {
+                      console.log("🔥 WORKSHOPS for " + userCity + ":", data);
+                      
+                      dropdown.innerHTML = "";
+                      
+                      let defaultOption = document.createElement("option");
+                      defaultOption.value = "";
+                      defaultOption.text = `Select Workshop in ${userCity}`;
+                      dropdown.appendChild(defaultOption);
+                      
+                      // CITY WORKSHOPS FIRST
+                      let cityWorkshops = data.cities?.[userCity] || [];
+                      cityWorkshops.forEach(w => addWorkshopOption(w));
+                      
+                      // ALL OTHERS (distance sorted)
+                      (data.workshops || []).forEach(w => {
+                        if (!cityWorkshops.some(cw => cw.id === w.id)) {
+                          addWorkshopOption(w);
+                        }
+                      });
+                      
+                      function addWorkshopOption(w) {
+                        let option = document.createElement("option");
+                        option.value = w.id;
+                        option.setAttribute("data-lat", w.latitude);
+                        option.setAttribute("data-lng", w.longitude);
+                        option.text = `${w.name} (${w.distance?.toFixed(1)} km)`;
+                        dropdown.appendChild(option);
+                      }
+                      
+                      // AUTO SELECT NEAREST LOCAL WORKSHOP
+                      if (dropdown.options.length > 1) {
+                        dropdown.selectedIndex = 1; // First real workshop
+                        directionBtn.disabled = false;
+                        document.getElementById("userLocation").innerText += ` | ${dropdown.options[1].text}`;
+                      }
+                      
+                      locationBtn.innerHTML = '<i class="fas fa-check-circle me-1 text-success"></i>City Ready';
+                    })
+                    .catch(err => {
+                      console.error("Workshop fetch failed:", err);
+                      dropdown.innerHTML = "<option>Workshops unavailable</option>";
+                    });
+                })
+                .catch(err => {
+                  console.error("City lookup failed:", err);
+                  document.getElementById("userLocation").innerText = "📍 Location ready";
+                });
+
+            })
+            .catch(err => {
+              console.error("❌ FETCH ERROR:", err);
+              dropdown.innerHTML = "<option>Server error</option>";
+            });
+
+          // ================= BUTTON RESET =================
+          setTimeout(() => {
+            locationBtn.disabled = false;
+            locationBtn.innerHTML = '<i class="fas fa-check me-1"></i>Location OK';
+          }, 1200);
+
+        },
+        function () {
+          alert("Location failed");
+        },
+        { enableHighAccuracy: true }
+      );
+    }
+
+    // ================= MAIN =================
+    $(document).ready(function () {
+
+      directionBtn = document.getElementById("directionBtn");
+      dropdown = document.getElementById("workshopDropdown");
+
+      // 🔒 disable initially
+      directionBtn.disabled = true;
+
+      // ================= ENABLE BUTTON =================
+      dropdown.addEventListener("change", function () {
+        directionBtn.disabled = !this.value;
+      });
+
+      // ================= GET DIRECTION =================
+      directionBtn.addEventListener("click", function () {
+        // Loading state
+        directionBtn.disabled = true;
+        const spinner = document.getElementById("directionSpinner");
+        spinner.classList.remove("d-none");
+
+        let selectedOption = dropdown.options[dropdown.selectedIndex];
+        let workshopName = selectedOption.textContent || 'workshop';
+
+        if (!selectedOption.value) {
+          alert("Please select a workshop first");
+          resetBtn();
+          return;
+        }
+
+        let destLat = parseFloat(selectedOption.getAttribute("data-lat"));
+        let destLng = parseFloat(selectedOption.getAttribute("data-lng"));
+
+        let userLat = parseFloat(document.getElementById("latitude").value);
+        let userLng = parseFloat(document.getElementById("longitude").value);
+
+        console.log("🚗 Directions to:", workshopName);
+        console.log("User:", userLat, userLng, "Workshop:", destLat, destLng);
+
+        if (isNaN(destLat) || isNaN(destLng)) {
+          alert("❌ Workshop location unavailable");
+          resetBtn();
+          return;
+        }
+
+        if (isNaN(userLat) || isNaN(userLng)) {
+          alert("❌ Get your location first");
+          resetBtn();
+          return;
+        }
+
+        // Open Google Maps
+        const url = `https://www.google.com/maps/dir/${userLat},${userLng}/${destLat},${destLng}`;
+        window.open(url, '_blank');
+
+        // Success feedback
+        setTimeout(() => {
+          // Simple native toast (no external deps)
+          const toast = document.createElement('div');
+          toast.innerHTML = `✅ Opened directions to ${workshopName}`;
+          toast.style.cssText = 'position:fixed;top:20px;right:20px;background:#28a745;color:white;padding:12px 20px;border-radius:8px;z-index:9999;font-weight:500;';
+          document.body.appendChild(toast);
+          setTimeout(() => toast.remove(), 3000);
+          resetBtn();
+        }, 800);
+
+        function resetBtn() {
+          directionBtn.disabled = false;
+          spinner.classList.add("d-none");
+        }
+      });
+
+      // ================= DATE =================
+      let today = new Date().toISOString().split("T")[0];
+      document.getElementById("preferred_date").min = today;
+      document.getElementById("preferred_date").value = today;
+
+      // ================= SERVICE FILTER =================
+      function filterServicesByVehicle() {
+
+        const v = $("#vehicle_type").val().toLowerCase();
+
+        $(".service-card-wrapper").each(function () {
+
+          const cb = $(this).find(".service-checkbox");
+          const sv = (cb.data("vehicle") || "").toString().toLowerCase();
+
+          if (sv === v || sv === "all") {
+            $(this).show();
+          } else {
+            cb.prop("checked", false);
+            $(this).hide();
+          }
+        });
+
+        updateBookingSummary();
+      }
+
+      // ================= BOOKING SUMMARY =================
+      function updateBookingSummary() {
+
+        let total = 0, duration = 0;
+
+        $(".service-checkbox:checked").each(function () {
+
+          total += parseFloat($(this).data("price")) || 0;
+
+          let d = $(this).closest(".service-card")
+            .find(".text-muted").text();
+
+          duration += parseInt(d.replace(/[^0-9]/g, "")) || 0;
+        });
+
+        $("#selectedCount").text($(".service-checkbox:checked").length);
+        $("#totalPrice").text(total.toFixed(2));
+        $("#totalDuration").text(duration);
+
+        let valid =
+          $(".service-checkbox:checked").length > 0 &&
+          $("#vehicle_type").val() &&
+          $("#preferred_date").val();
+
+        $("#bookButton").prop("disabled", !valid);
+      }
+
+      // ================= EVENTS =================
+      $(".service-checkbox").on("change", updateBookingSummary);
+      $("#vehicle_type").on("change", filterServicesByVehicle);
+      $("#preferred_date").on("change", updateBookingSummary);
+
+      setTimeout(() => {
+        filterServicesByVehicle();
+        updateBookingSummary();
+      }, 50);
+
+    });
+
+  </script>
+</body>
+
+</html>

@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}Manage Services - Workshop{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+  <h2 class="mb-4">Manage Your Services</h2>
+
+  <form method="POST" action="{{ url_for('workshop_services') }}">
+    <div class="mb-3">
+      <label for="service_id" class="form-label">Select Service</label>
+      <select class="form-select" id="service_id" name="service_id" required>
+        <option value="">Choose a service</option>
+        {% for service in all_services %}
+          <option value="{{ service.id }}" {% if service.id in workshop_service_ids %}selected{% endif %}>
+            {{ service.name }} - ₹{{ service.price }}
+          </option>
+        {% endfor %}
+      </select>
+    </div>
+    <button type="submit" class="btn btn-primary">Add/Update Service</button>
+  </form>
+
+  <hr>
+
+  <h3>Your Current Services</h3>
+  <ul class="list-group">
+    {% for service in workshop_services %}
+      <li class="list-group-item d-flex justify-content-between align-items-center">
+        {{ service.name }} - ₹{{ service.price }}
+        <form method="POST" action="{{ url_for('remove_workshop_service') }}" style="margin:0;">
+          <input type="hidden" name="service_name" value="{{ service.name }}">
+          <button type="submit" class="btn btn-danger btn-sm">Remove</button>
+        </form>
+      </li>
+    {% else %}
+      <li class="list-group-item">No services added yet.</li>
+    {% endfor %}
+  </ul>
+</div>
+{% endblock %}

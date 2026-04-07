@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+
+{% block title %}Contact Messages - Admin{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <div class="row">
+    <div class="col-12">
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Contact Messages</h2>
+        <a href="{{ url_for('admin_dashboard') }}" class="btn btn-secondary">Back to Dashboard</a>
+      </div>
+
+      {% if messages %}
+        <div class="card">
+          <div class="card-body">
+            <div class="table-responsive">
+              <table class="table table-striped">
+                <thead>
+                  <tr>
+                    <th>ID</th>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Message</th>
+                    <th>Date</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for message in messages %}
+                  <tr>
+                    <td>{{ message.id }}</td>
+                    <td>{{ message.name }}</td>
+                    <td>{{ message.email }}</td>
+                    <td>
+                      {% if message.message|length > 100 %}
+                        {{ message.message[:100] }}...
+                      {% else %}
+                        {{ message.message }}
+                      {% endif %}
+                    </td>
+                    <td>{{ message.created_at.strftime('%Y-%m-%d %H:%M') if message.created_at else 'N/A' }}</td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      {% else %}
+        <div class="alert alert-info">
+          <h4>No contact messages found</h4>
+          <p>No customers have contacted you yet.</p>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

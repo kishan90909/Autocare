@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}Invoice - AutoCare{% endblock %}
+{% block content %}
+<div class="container py-5">
+  <div class="card shadow-lg p-4">
+    <h2 class="text-center mb-4">🧾 Invoice</h2>
+
+    <div class="mb-4">
+      <h5>Invoice #{{ invoice.id }}</h5>
+      <p><strong>Date:</strong> {{ invoice.date }}</p>
+      <p><strong>Customer:</strong> {{ invoice.customer_name }}</p>
+      <p><strong>Vehicle:</strong> {{ invoice.vehicle }}</p>
+    </div>
+
+    <table class="table table-striped">
+      <thead class="table-dark">
+        <tr>
+          <th>Service</th>
+          <th>Description</th>
+          <th class="text-end">Price (₹)</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in invoice.items %}
+        <tr>
+          <td>{{ item.name }}</td>
+          <td>{{ item.description }}</td>
+          <td class="text-end">₹{{ "%.2f"|format(item.price) }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+      <tfoot>
+        <tr>
+          <td colspan="2" class="text-end"><strong>Total</strong></td>
+          <td class="text-end fw-bold">₹{{ "%.2f"|format(invoice.total) }}</td>
+        </tr>
+      </tfoot>
+    </table>
+
+    <div class="text-center mt-4">
+      <button onclick="window.print()" class="btn btn-outline-primary">🖨 Print Invoice</button>
+    </div>
+  </div>
+</div>
+{% endblock %}

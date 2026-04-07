@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Service History - AutoCare</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdn.datatables.net/1.11.5/css/dataTables.bootstrap5.min.css" rel="stylesheet">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.11.5/js/dataTables.bootstrap5.min.js"></script>
+    <style>
+        .status-badge {
+            font-size: 0.8em;
+            padding: 4px 8px;
+            border-radius: 12px;
+        }
+        .status-completed { background-color: #d1ecf1; color: #0c5460; }
+        .status-cancelled { background-color: #f8d7da; color: #721c24; }
+        .status-pending { background-color: #fff3cd; color: #856404; }
+        .service-card {
+            transition: transform 0.2s;
+            border: none;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .service-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+        .rating-stars {
+            color: #ffc107;
+            font-size: 1.2em;
+        }
+        .filter-section {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .invoice-btn {
+            padding: 4px 8px;
+            font-size: 12px;
+        }
+        .payment-required {
+            border-left: 4px solid #ffc107;
+            background-color: #fff8e1;
+        }
+        .payment-completed {
+            border-left: 4px solid #28a745;
+            background-color: #e8f5e8;
+        }
+        .rating-section {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 10px;
+        }
+        .rating-disabled {
+            opacity: 0.5;
+            pointer-events: none;
+        }
+        .service-image {
+            width: 60px;
+            height: 60px;
+            object-fit: cover;
+            border-radius: 8px;
+        }
+        .total-spent-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .service-count-card {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+        }
+        .avg-rating-card {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="#"><i class="fas fa-car"></i> AutoCare</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/customer/dashboard"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="#"><i class="fas fa-history"></i> Service History</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#"><i class="fas fa-credit-card"></i> Payments</a>
+                    </li>
+                </ul>
+                <ul class="navbar-nav">
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-user"></i> Welcome, {{ customer_name }}
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="#"><i class="fas fa-user-cog"></i> Profile Settings</a></li>
+                            <li><a class="dropdown-item" href="#"><i class="fas fa-bell"></i> Notification Preferences</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="/logout"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid mt-4">
+        <!-- Page Header -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <h2><i class="fas fa-history"></i> Service History</h2>
+                <p class="text-muted">View your complete service history and track past maintenance</p>
+            </div>
+        </div>
+
+        <!-- Summary Cards -->
+        <div class="row mb-4">
+            <div class="col-md-4">
+                <div class="card service-card total-spent-card">
+                    <div class="card-body text-center">
+                        <i class="fas fa-rupee-sign fa-2x mb-2"></i>
+                        <h3 class="card-title">₹{{ total_spent }}</h3>
+                        <p class="card-text">Total Amount Spent</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card service-card service-count-card">
+                    <div class="card-body text-center">
+                        <i class="fas fa-wrench fa-2x mb-2"></i>
+                        <h3 class="card-title">{{ total_services }}</h3>
+                        <p class="card-text">Total Services</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card service-card avg-rating-card">
+                    <div class="card-body text-center">
+                        <div class="rating-stars mb-2">
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star"></i>
+                            <i class="fas fa-star-half-alt"></i>
+                        </div>
+                        <h3 class="card-title">{{ avg_rating }}</h3>
+                        <p class="card-text">Average Rating</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filters -->
+        <div class="filter-section">
+            <div class="row">
+                <div class="col-md-3">
+                    <label class="form-label">Date Range</label>
+                    <select class="form-select" id="dateFilter">
+                        <option value="all">All Time</option>
+                        <option value="30">Last 30 Days</option>
+                        <option value="90">Last 3 Months</option>
+                        <option value="365">Last Year</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Service Status</label>
+                    <select class="form-select" id="statusFilter">
+                        <option value="all">All Status</option>
+                        <option value="completed">Completed</option>
+                        <option value="cancelled">Cancelled</option>
+                        <option value="pending">Pending</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Workshop</label>
+                    <select class="form-select" id="workshopFilter">
+                        <option value="all">All Workshops</option>
+                        {% for workshop in workshops %}
+                        <option value="{{ workshop.id }}">{{ workshop.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Service Type</label>
+                    <select class="form-select" id="serviceFilter">
+                        <option value="all">All Services</option>
+                        {% for service in service_types %}
+                        <option value="{{ service.id }}">{{ service.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            <div class="row mt-3">
+                <div class="col-12">
+                    <button class="btn btn-primary" onclick="applyFilters()">
+                        <i class="fas fa-filter"></i> Apply Filters
+                    </button>
+                    <button class="btn btn-outline-secondary ms-2" onclick="clearFilters()">
+                        <i class="fas fa-times"></i> Clear Filters
+                    </button>
+                    <button class="btn btn-outline-success ms-2" onclick="exportHistory()">
+                        <i class="fas fa-download"></i> Export
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Service History Table -->
+        <div class="card service-card">
+            <div class="card-header">
+                <h5><i class="fas fa-list"></i> Service History</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover" id="serviceHistoryTable">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>Booking ID</th>
+                                <th>Date & Time</th>
+                                <th>Workshop</th>
+                                <th>Services</th>
+                                <th>Amount</th>
+                                <th>Status</th>
+                                <th>Rating</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for booking in service_history %}
+                            <tr class="{% if booking.payment_status != 'completed' %}payment-required{% elif booking.payment_status == 'completed' %}payment-completed{% endif %}">
+                                <td>
+                                    <strong>#{{ booking.id }}</strong><br>
+                                    <small class="text-muted">{{ booking.created_at }}</small>
+                                </td>
+                                <td>
+                                    <i class="fas fa-calendar"></i> {{ booking.preferred_date }}<br>
+                                    <i class="fas fa-clock"></i> {{ booking.preferred_time }}
+                                </td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        {% if booking.workshop_image %}
+                                        <img src="{{ booking.workshop_image }}" class="service-image me-2" alt="Workshop">
+                                        {% endif %}
+                                        <div>
+                                            <strong>{{ booking.workshop_name }}</strong><br>
+                                            <small class="text-muted">
+                                                <i class="fas fa-map-marker-alt"></i> {{ booking.workshop_address }}
+                                            </small>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="service-list">
+                                        {% for service in booking.services %}
+                                        <span class="badge bg-light text-dark me-1 mb-1">{{ service.name }}</span>
+                                        {% endfor %}
+                                    </div>
+                                    {% if booking.vehicle_info %}
+                                    <small class="text-muted">
+                                        <i class="fas fa-car"></i> {{ booking.vehicle_info }}
+                                    </small>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <strong>₹{{ booking.total_cost }}</strong><br>
+                                    <small class="text-muted">{{ booking.payment_status }}</small>
+                                </td>
+                                <td>
+                                    <span class="status-badge status-{{ booking.status }}">
+                                        {{ booking.status.title() }}
+                                    </span>
+                                </td>
+                                <td>
+                                    {% if booking.rating %}
+                                    <div class="rating-stars">
+                                        {% for i in range(booking.rating) %}
+                                        <i class="fas fa-star"></i>
+                                        {% endfor %}
+                                        {% if booking.rating % 1 != 0 %}
+                                        <i class="fas fa-star-half-alt"></i>
+                                        {% endif %}
+                                    </div>
+                                    <small class="text-muted">({{ booking.rating }})</small>
+                                    {% else %}
+                                    <span class="text-muted">Not rated</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="btn-group-vertical" role="group">
+                                        {% if booking.payment_status != 'completed' %}
+                                        <button class="btn btn-sm btn-success invoice-btn mb-1"
+                                                onclick="makePayment('{{ booking.id }}')"
+                                                title="Make Payment - Required before rating">
+                                            <i class="fas fa-credit-card"></i> Pay Now
+                                        </button>
+                                        {% endif %}
+                                        {% if booking.payment_status == 'completed' %}
+                                        <button class="btn btn-sm btn-outline-primary invoice-btn mb-1"
+                                                onclick="downloadInvoice('{{ booking.id }}')"
+                                                title="Download Invoice with AutoCare Watermark">
+                                            <i class="fas fa-download"></i> Invoice
+                                        </button>
+                                        {% endif %}
+                                        {% if booking.status == 'completed' and booking.payment_status == 'completed' and not booking.rating %}
+                                        <button class="btn btn-sm btn-outline-warning invoice-btn mb-1"
+                                                onclick="rateService('{{ booking.id }}')"
+                                                title="Rate Service - Available after payment">
+                                            <i class="fas fa-star"></i> Rate
+                                        </button>
+                                        {% endif %}
+                                        <button class="btn btn-sm btn-outline-info invoice-btn mb-1"
+                                                onclick="viewDetails('{{ booking.id }}')"
+                                                title="View Details">
+                                            <i class="fas fa-eye"></i> Details
+                                        </button>
+                                        {% if booking.status == 'completed' %}
+                                        <button class="btn btn-sm btn-outline-success invoice-btn"
+                                                onclick="bookAgain('{{ booking.id }}')"
+                                                title="Book Again">
+                                            <i class="fas fa-redo"></i> Repeat
+                                        </button>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Service Timeline -->
+        <div class="card service-card mt-4">
+            <div class="card-header">
+                <h5><i class="fas fa-clock"></i> Service Timeline</h5>
+            </div>
+            <div class="card-body">
+                <div class="timeline">
+                    {% for booking in service_history %}
+                    <div class="timeline-item mb-4">
+                        <div class="d-flex">
+                            <div class="timeline-marker me-3">
+                                <i class="fas fa-circle text-primary"></i>
+                            </div>
+                            <div class="timeline-content flex-grow-1">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div>
+                                        <h6 class="mb-1">{{ booking.workshop_name }}</h6>
+                                        <p class="text-muted mb-2">
+                                            {{ booking.preferred_date }} at {{ booking.preferred_time }}
+                                        </p>
+                                        <div class="service-list mb-2">
+                                            {% for service in booking.services %}
+                                            <span class="badge bg-secondary me-1">{{ service.name }}</span>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                    <div class="text-end">
+                                        <div class="mb-1">
+                                            <strong>₹{{ booking.total_cost }}</strong>
+                                        </div>
+                                        <span class="status-badge status-{{ booking.status }}">
+                                            {{ booking.status.title() }}
+                                        </span>
+                                    </div>
+                                </div>
+                                {% if booking.rating %}
+                                <div class="mt-2">
+                                    <div class="rating-stars">
+                                        {% for i in range(booking.rating) %}
+                                        <i class="fas fa-star"></i>
+                                        {% endfor %}
+                                    </div>
+                                    {% if booking.review %}
+                                    <small class="text-muted">{{ booking.review }}</small>
+                                    {% endif %}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Invoice Modal -->
+    <div class="modal fade" id="invoiceModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Invoice #<span id="invoiceNumber"></span></h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="invoiceContent">
+                    <!-- Invoice content will be loaded here -->
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary" onclick="downloadInvoice()">
+                        <i class="fas fa-download"></i> Download PDF
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Rating Modal -->
+    <div class="modal fade" id="ratingModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Rate Your Service</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="ratingForm">
+                        <div class="mb-3">
+                            <label class="form-label">Rating</label>
+                            <div class="rating-input mb-2">
+                                <i class="far fa-star" data-rating="1"></i>
+                                <i class="far fa-star" data-rating="2"></i>
+                                <i class="far fa-star" data-rating="3"></i>
+                                <i class="far fa-star" data-rating="4"></i>
+                                <i class="far fa-star" data-rating="5"></i>
+                            </div>
+                            <input type="hidden" id="ratingValue" name="rating" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Review (Optional)</label>
+                            <textarea class="form-control" id="reviewText" name="review" rows="3"
+                                      placeholder="Share your experience..."></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="submitRating()">Submit Rating</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentBookingId = null;
+        let currentRating = 0;
+
+        // Initialize DataTable
+        $(document).ready(function() {
+            $('#serviceHistoryTable').DataTable({
+                "pageLength": 10,
+                "ordering": true,
+                "searching": true,
+                "responsive": true,
+                "columnDefs": [
+                    { "orderable": false, "targets": [3, 7] } // Services and Actions columns
+                ]
+            });
+        });
+
+        // Filter functions
+        function applyFilters() {
+            const dateFilter = document.getElementById('dateFilter').value;
+            const statusFilter = document.getElementById('statusFilter').value;
+            const workshopFilter = document.getElementById('workshopFilter').value;
+            const serviceFilter = document.getElementById('serviceFilter').value;
+
+            // Reload table with filters
+            $('#serviceHistoryTable').DataTable().ajax.reload();
+        }
+
+        function clearFilters() {
+            document.getElementById('dateFilter').value = 'all';
+            document.getElementById('statusFilter').value = 'all';
+            document.getElementById('workshopFilter').value = 'all';
+            document.getElementById('serviceFilter').value = 'all';
+            applyFilters();
+        }
+
+        function exportHistory() {
+            const filters = {
+                date_range: document.getElementById('dateFilter').value,
+                status: document.getElementById('statusFilter').value,
+                workshop: document.getElementById('workshopFilter').value,
+                service: document.getElementById('serviceFilter').value
+            };
+
+            window.location.href = '/customer/export-history?' + new URLSearchParams(filters);
+        }
+
+        // Action functions
+        function viewInvoice(bookingId) {
+            fetch('/api/invoice/' + bookingId)
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('invoiceNumber').textContent = bookingId;
+                    document.getElementById('invoiceContent').innerHTML =
+                        '<div class="invoice-preview">' +
+                            '<h6>Workshop: ' + data.workshop_name + '</h6>' +
+                            '<p>Date: ' + data.preferred_date + '</p>' +
+                            '<p>Total Amount: ₹' + data.total_cost + '</p>' +
+                            '<div class="service-list">' +
+                                data.services.map(function(service) { return '<span class="badge bg-light text-dark me-1">' + service.name + '</span>'; }).join('') +
+                            '</div>' +
+                        '</div>';
+                    new bootstrap.Modal(document.getElementById('invoiceModal')).show();
+                });
+        }
+
+        function downloadInvoice(bookingId) {
+            // Show loading indicator
+            const button = event.target.closest('button');
+            const originalText = button.innerHTML;
+            button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating...';
+            button.disabled = true;
+
+            // Generate and download invoice PDF with AutoCare watermark
+            fetch('/customer/generate-invoice/' + bookingId, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Create download link
+                    const link = document.createElement('a');
+                    link.href = data.invoice_path;
+                    link.download = `AutoCare_Invoice_${bookingId}.pdf`;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+
+                    // Show success notification
+                    alert('Invoice downloaded successfully! The invoice includes AutoCare watermark for authenticity.');
+
+                    // Refresh the page to update payment status
+                    setTimeout(() => {
+                        location.reload();
+                    }, 1000);
+                } else {
+                    throw new Error(data.message || 'Failed to generate invoice');
+                }
+            })
+            .catch(error => {
+                console.error('Error generating invoice:', error);
+                alert('Failed to generate invoice. Please try again.');
+            })
+            .finally(() => {
+                // Restore button
+                button.innerHTML = originalText;
+                button.disabled = false;
+            });
+        }
+
+        function makePayment(bookingId) {
+            // Show payment modal or redirect to payment page
+            if (confirm('You will be redirected to the payment page. Continue?')) {
+                window.location.href = '/customer/payment/' + bookingId;
+            }
+        }
+
+        function rateService(bookingId) {
+            currentBookingId = bookingId;
+            document.getElementById('ratingValue').value = '';
+            document.getElementById('reviewText').value = '';
+            currentRating = 0;
+
+            // Reset stars
+            const stars = document.querySelectorAll('.rating-input .fa-star');
+            stars.forEach(star => {
+                star.className = 'far fa-star';
+            });
+
+            new bootstrap.Modal(document.getElementById('ratingModal')).show();
+        }
+
+        function viewDetails(bookingId) {
+            window.location.href = '/customer/booking-details/' + bookingId;
+        }
+
+        function bookAgain(bookingId) {
+            window.location.href = '/customer/book-again/' + bookingId;
+        }
+
+        // Rating system
+        document.addEventListener('DOMContentLoaded', function() {
+            const stars = document.querySelectorAll('.rating-input .fa-star');
+
+            stars.forEach(star => {
+                star.addEventListener('click', function() {
+                    const rating = parseInt(this.getAttribute('data-rating'));
+                    currentRating = rating;
+
+                    // Update star display
+                    stars.forEach((s, index) => {
+                        if (index < rating) {
+                            s.className = 'fas fa-star';
+                        } else {
+                            s.className = 'far fa-star';
+                        }
+                    });
+
+                    document.getElementById('ratingValue').value = rating;
+                });
+
+                star.addEventListener('mouseenter', function() {
+                    const rating = parseInt(this.getAttribute('data-rating'));
+                    stars.forEach((s, index) => {
+                        if (index < rating) {
+                            s.className = 'fas fa-star';
+                        } else {
+                            s.className = 'far fa-star';
+                        }
+                    });
+                });
+            });
+
+            // Reset stars on mouse leave
+            document.querySelector('.rating-input').addEventListener('mouseleave', function() {
+                stars.forEach((s, index) => {
+                    if (index < currentRating) {
+                        s.className = 'fas fa-star';
+                    } else {
+                        s.className = 'far fa-star';
+                    }
+                });
+            });
+        });
+
+        function submitRating() {
+            if (!currentRating) {
+                alert('Please select a rating');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('booking_id', currentBookingId);
+            formData.append('rating', currentRating);
+            formData.append('review', document.getElementById('reviewText').value);
+
+            fetch('/customer/submit-rating', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    bootstrap.Modal.getInstance(document.getElementById('ratingModal')).hide();
+                    alert('Thank you for your rating!');
+                    location.reload();
+                } else {
+                    alert('Failed to submit rating. Please try again.');
+                }
+            });
+        }
+
+        // Auto-refresh functionality
+        setInterval(function() {
+            // Check for any status updates
+            console.log('Checking for updates...');
+        }, 60000); // Check every minute
+    </script>
+</body>
+</html>

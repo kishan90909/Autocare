@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enhanced Analytics - AutoCare Admin</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/chart.js" rel="stylesheet">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .analytics-card {
+            transition: transform 0.2s;
+            border: none;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .analytics-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+        .metric-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-align: center;
+        }
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin: 20px 0;
+        }
+        .filter-section {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .kpi-card {
+            background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%);
+            color: white;
+            text-align: center;
+        }
+        .trend-up {
+            color: #28a745;
+        }
+        .trend-down {
+            color: #dc3545;
+        }
+        .trend-neutral {
+            color: #6c757d;
+        }
+        .metric-value {
+            font-size: 2rem;
+            font-weight: bold;
+        }
+        .metric-label {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+        .time-period-selector {
+            background-color: white;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 10px;
+        }
+        .export-btn {
+            margin-left: 10px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="#"><i class="fas fa-car"></i> AutoCare Admin</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/admin/dashboard"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/admin/workshops"><i class="fas fa-tools"></i> Workshops</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/admin/bookings"><i class="fas fa-calendar-check"></i> Bookings</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="#"><i class="fas fa-chart-line"></i> Enhanced Analytics</a>
+                    </li>
+                </ul>
+                <ul class="navbar-nav">
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-user"></i> Admin
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="#"><i class="fas fa-user-cog"></i> Profile Settings</a></li>
+                            <li><a class="dropdown-item" href="#"><i class="fas fa-bell"></i> Notifications</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="/logout"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid mt-4">
+        <!-- Page Header -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <h2><i class="fas fa-chart-line"></i> Enhanced Analytics Dashboard</h2>
+                <p class="text-muted">Comprehensive insights and advanced analytics for your AutoCare business</p>
+            </div>
+        </div>
+
+        <!-- Time Period Selector -->
+        <div class="filter-section">
+            <div class="row">
+                <div class="col-md-4">
+                    <label class="form-label">Time Period</label>
+                    <select class="form-select" id="timePeriod" onchange="updateAnalytics()">
+                        <option value="7">Last 7 days</option>
+                        <option value="30" selected>Last 30 days</option>
+                        <option value="90">Last 90 days</option>
+                        <option value="365">Last year</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Report Type</label>
+                    <select class="form-select" id="reportType" onchange="updateAnalytics()">
+                        <option value="comprehensive" selected>Comprehensive</option>
+                        <option value="bookings">Bookings Only</option>
+                        <option value="revenue">Revenue Only</option>
+                        <option value="customers">Customers Only</option>
+                        <option value="workshops">Workshops Only</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Actions</label>
+                    <div class="d-grid gap-2">
+                        <button class="btn btn-primary" onclick="refreshAnalytics()">
+                            <i class="fas fa-sync-alt"></i> Refresh
+                        </button>
+                        <button class="btn btn-outline-success" onclick="exportReport()">
+                            <i class="fas fa-download"></i> Export Report
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Key Performance Indicators -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="card analytics-card metric-card">
+                    <div class="card-body text-center">
+                        <i class="fas fa-calendar-check fa-2x mb-2"></i>
+                        <div class="metric-value">{{ kpis.total_bookings }}</div>
+                        <div class="metric-label">Total Bookings</div>
+                        <div class="{% if kpis.booking_trend >= 0 %}trend-up{% else %}trend-down{% endif %}">
+                            <i class="fas fa-arrow-{% if kpis.booking_trend >= 0 %}up{% else %}down{% endif %}"></i>
+                            {{ "%.1f"|format(abs(kpis.booking_trend)) }}%
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card analytics-card metric-card">
+                    <div class="card-body text-center">
+                        <i class="fas fa-rupee-sign fa-2x mb-2"></i>
+                        <div class="metric-value">₹{{ "%.0f"|format(kpis.total_revenue) }}</div>
+                        <div class="metric-label">Total Revenue</div>
+                        <div class="{% if kpis.revenue_trend >= 0 %}trend-up{% else %}trend-down{% endif %}">
+                            <i class="fas fa-arrow-{% if kpis.revenue_trend >= 0 %}up{% else %}down{% endif %}"></i>
+                            {{ "%.1f"|format(abs(kpis.revenue_trend)) }}%
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card analytics-card metric-card">
+                    <div class="card-body text-center">
+                        <i class="fas fa-users fa-2x mb-2"></i>
+                        <div class="metric-value">{{ kpis.total_customers }}</div>
+                        <div class="metric-label">Total Customers</div>
+                        <div class="{% if kpis.customer_trend >= 0 %}trend-up{% else %}trend-down{% endif %}">
+                            <i class="fas fa-arrow-{% if kpis.customer_trend >= 0 %}up{% else %}down{% endif %}"></i>
+                            {{ "%.1f"|format(abs(kpis.customer_trend)) }}%
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card analytics-card kpi-card">
+                    <div class="card-body text-center">
+                        <i class="fas fa-star fa-2x mb-2"></i>
+                        <div class="metric-value">{{ "%.1f"|format(kpis.avg_rating) }}</div>
+                        <div class="metric-label">Avg. Rating</div>
+                        <div class="{% if kpis.rating_trend >= 0 %}trend-up{% else %}trend-down{% endif %}">
+                            <i class="fas fa-arrow-{% if kpis.rating_trend >= 0 %}up{% else %}down{% endif %}"></i>
+                            {{ "%.1f"|format(abs(kpis.rating_trend)) }}%
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <!-- Revenue Analytics -->
+            <div class="col-md-8">
+                <div class="card analytics-card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5><i class="fas fa-chart-area"></i> Revenue Trends</h5>
+                        <div class="btn-group btn-group-sm">
+                            <button class="btn btn-outline-primary active" onclick="showRevenueChart('daily')">Daily</button>
+                            <button class="btn btn-outline-primary" onclick="showRevenueChart('weekly')">Weekly</button>
+                            <button class="btn btn-outline-primary" onclick="showRevenueChart('monthly')">Monthly</button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-container">
+                            <canvas id="revenueChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Booking Analytics -->
+                <div class="card analytics-card mt-4">
+                    <div class="card-header">
+                        <h5><i class="fas fa-calendar-alt"></i> Booking Analytics</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="chart-container">
+                                    <canvas id="bookingStatusChart"></canvas>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="chart-container">
+                                    <canvas id="servicePopularityChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Analytics Summary -->
+            <div class="col-md-4">
+                <!-- Customer Analytics -->
+                <div class="card analytics-card">
+                    <div class="card-header">
+                        <h5><i class="fas fa-users"></i> Customer Insights</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <div class="d-flex justify-content-between">
+                                <span>New Customers</span>
+                                <strong>{{ customer_analytics.new_customers }}</strong>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <div class="d-flex justify-content-between">
+                                <span>Repeat Customers</span>
+                                <strong>{{ customer_analytics.repeat_customers }}</strong>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <div class="d-flex justify-content-between">
+                                <span>Retention Rate</span>
+                                <strong>{{ "%.1f"|format(customer_analytics.retention_rate) }}%</strong>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <div class="d-flex justify-content-between">
+                                <span>Avg. Rating</span>
+                                <strong>{{ "%.1f"|format(customer_analytics.avg_rating) }}</strong>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Workshop Performance -->
+                <div class="card analytics-card mt-4">
+                    <div class="card-header">
+                        <h5><i class="fas fa-tools"></i> Top Workshops</h5>
+                    </div>
+                    <div class="card-body">
+                        {% for workshop in top_workshops[:5] %}
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <div>
+                                <div class="fw-bold">{{ workshop.name }}</div>
+                                <small class="text-muted">{{ workshop.bookings }} bookings</small>
+                            </div>
+                            <div class="text-end">
+                                <div class="fw-bold">₹{{ "%.0f"|format(workshop.revenue) }}</div>
+                                <div class="{% if workshop.rating %}text-warning{% else %}text-muted{% endif %}">
+                                    {% if workshop.rating %}
+                                    <i class="fas fa-star"></i> {{ "%.1f"|format(workshop.rating) }}
+                                    {% else %}
+                                    No ratings
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- Service Popularity -->
+                <div class="card analytics-card mt-4">
+                    <div class="card-header">
+                        <h5><i class="fas fa-wrench"></i> Popular Services</h5>
+                    </div>
+                    <div class="card-body">
+                        {% for service in popular_services[:5] %}
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <div>
+                                <div class="fw-bold">{{ service.name }}</div>
+                                <small class="text-muted">{{ service.bookings }} bookings</small>
+                            </div>
+                            <div class="text-end">
+                                <div class="fw-bold">₹{{ "%.0f"|format(service.revenue) }}</div>
+                                <small class="text-muted">₹{{ "%.0f"|format(service.avg_price) }}/booking</small>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Detailed Analytics Tables -->
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="card analytics-card">
+                    <div class="card-header">
+                        <h5><i class="fas fa-table"></i> Detailed Analytics</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Metric</th>
+                                        <th>Current Period</th>
+                                        <th>Previous Period</th>
+                                        <th>Change</th>
+                                        <th>Trend</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td><strong>Total Bookings</strong></td>
+                                        <td>{{ current_bookings }}</td>
+                                        <td>{{ previous_bookings }}</td>
+                                        <td>
+                                            <span class="{% if booking_change >= 0 %}text-success{% else %}text-danger{% endif %}">
+                                                {% if booking_change >= 0 %}+{% endif %}{{ "%.1f"|format(booking_change) }}%
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <i class="fas fa-arrow-{% if booking_change >= 0 %}up text-success{% else %}down text-danger{% endif %}"></i>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Total Revenue</strong></td>
+                                        <td>₹{{ "%.0f"|format(current_revenue) }}</td>
+                                        <td>₹{{ "%.0f"|format(previous_revenue) }}</td>
+                                        <td>
+                                            <span class="{% if revenue_change >= 0 %}text-success{% else %}text-danger{% endif %}">
+                                                {% if revenue_change >= 0 %}+{% endif %}{{ "%.1f"|format(revenue_change) }}%
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <i class="fas fa-arrow-{% if revenue_change >= 0 %}up text-success{% else %}down text-danger{% endif %}"></i>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>New Customers</strong></td>
+                                        <td>{{ current_customers }}</td>
+                                        <td>{{ previous_customers }}</td>
+                                        <td>
+                                            <span class="{% if customer_change >= 0 %}text-success{% else %}text-danger{% endif %}">
+                                                {% if customer_change >= 0 %}+{% endif %}{{ "%.1f"|format(customer_change) }}%
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <i class="fas fa-arrow-{% if customer_change >= 0 %}up text-success{% else %}down text-danger{% endif %}"></i>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Avg. Booking Value</strong></td>
+                                        <td>₹{{ "%.0f"|format(current_avg_value) }}</td>
+                                        <td>₹{{ "%.0f"|format(previous_avg_value) }}</td>
+                                        <td>
+                                            <span class="{% if avg_value_change >= 0 %}text-success{% else %}text-danger{% endif %}">
+                                                {% if avg_value_change >= 0 %}+{% endif %}{{ "%.1f"|format(avg_value_change) }}%
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <i class="fas fa-arrow-{% if avg_value_change >= 0 %}up text-success{% else %}down text-danger{% endif %}"></i>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let revenueChart = null;
+        let bookingStatusChart = null;
+        let servicePopularityChart = null;
+
+        // Initialize charts when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeCharts();
+        });
+
+        function initializeCharts() {
+            // Revenue Chart
+            const revenueCtx = document.getElementById('revenueChart').getContext('2d');
+            revenueChart = new Chart(revenueCtx, {
+                type: 'line',
+                data: {
+                    labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+                    datasets: [{
+                        label: 'Daily Revenue',
+                        data: [12000, 19000, 15000, 25000, 22000, 30000, 28000],
+                        borderColor: '#667eea',
+                        backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return '₹' + value;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Booking Status Chart
+            const bookingCtx = document.getElementById('bookingStatusChart').getContext('2d');
+            bookingStatusChart = new Chart(bookingCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Completed', 'Pending', 'Cancelled', 'In Progress'],
+                    datasets: [{
+                        data: [65, 20, 10, 5],
+                        backgroundColor: ['#28a745', '#ffc107', '#dc3545', '#6c757d'],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+
+            // Service Popularity Chart
+            const serviceCtx = document.getElementById('servicePopularityChart').getContext('2d');
+            servicePopularityChart = new Chart(serviceCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['Oil Change', 'Brake Service', 'Engine Repair', 'Tire Change', 'Car Wash'],
+                    datasets: [{
+                        label: 'Bookings',
+                        data: [45, 32, 28, 25, 18],
+                        backgroundColor: '#764ba2',
+                        borderColor: '#764ba2',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateAnalytics() {
+            const timePeriod = document.getElementById('timePeriod').value;
+            const reportType = document.getElementById('reportType').value;
+
+            // Reload page with new parameters
+            window.location.href = `/admin/enhanced_analytics?period=${timePeriod}&type=${reportType}`;
+        }
+
+        function refreshAnalytics() {
+            location.reload();
+        }
+
+        function exportReport() {
+            const timePeriod = document.getElementById('timePeriod').value;
+            const reportType = document.getElementById('reportType').value;
+
+            window.location.href = `/admin/export_analytics?period=${timePeriod}&type=${reportType}&format=pdf`;
+        }
+
+        function showRevenueChart(period) {
+            // Update revenue chart based on period
+            console.log('Revenue chart period:', period);
+            // This would update the chart data based on the selected period
+        }
+    </script>
+</body>
+</html>

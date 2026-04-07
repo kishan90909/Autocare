@@ -1,0 +1,141 @@
+{% extends "base.html" %}
+
+{% block title %}My Complaints - AutoCare{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <!-- Sidebar -->
+        <nav class="col-md-2 d-none d-md-block bg-light sidebar">
+            <div class="sidebar-sticky">
+                <h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-4 mb-1 text-muted">
+                    <span>Customer Panel</span>
+                </h6>
+                <ul class="nav flex-column">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('customer_dashboard') }}">
+                            <i class="fas fa-tachometer-alt"></i> Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('book_service') }}">
+                            <i class="fas fa-plus-circle"></i> Book Service
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('customer_bookings') }}">
+                            <i class="fas fa-calendar-check"></i> My Bookings
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('customer_service_tracking') }}">
+                            <i class="fas fa-eye"></i> Track Services
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="{{ url_for('customer_complaints') }}">
+                            <i class="fas fa-exclamation-triangle"></i> My Complaints
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('customer_profile') }}">
+                            <i class="fas fa-user"></i> Profile
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </nav>
+
+        <!-- Main content -->
+        <main role="main" class="col-md-9 ml-sm-auto col-lg-10 px-4">
+            <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                <h1 class="h2">My Complaints</h1>
+                <div class="btn-toolbar mb-2 mb-md-0">
+                    <a href="{{ url_for('customer_new_complaint') }}" class="btn btn-primary">
+                        <i class="fas fa-plus"></i> New Complaint
+                    </a>
+                </div>
+            </div>
+
+            <!-- Complaints List -->
+            <div class="row">
+                <div class="col-12">
+                    {% if complaints %}
+                        <div class="card">
+                            <div class="card-header">
+                                <h5 class="mb-0">Your Complaints</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table table-striped">
+                                        <thead>
+                                            <tr>
+                                                <th>ID</th>
+                                                <th>Subject</th>
+                                                <th>Category</th>
+                                                <th>Priority</th>
+                                                <th>Status</th>
+                                                <th>Created</th>
+                                                <th>Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for complaint in complaints %}
+                                            <tr>
+                                                <td>#{{ complaint.id }}</td>
+                                                <td>{{ complaint.subject }}</td>
+                                                <td>
+                                                    <span class="badge badge-secondary">{{ complaint.category|title }}</span>
+                                                </td>
+                                                <td>
+                                                    {% if complaint.priority == 'high' %}
+                                                        <span class="badge badge-danger">High</span>
+                                                    {% elif complaint.priority == 'medium' %}
+                                                        <span class="badge badge-warning">Medium</span>
+                                                    {% else %}
+                                                        <span class="badge badge-info">Low</span>
+                                                    {% endif %}
+                                                </td>
+                                                <td>
+                                                    {% if complaint.status == 'pending' %}
+                                                        <span class="badge badge-warning">Pending</span>
+                                                    {% elif complaint.status == 'in_progress' %}
+                                                        <span class="badge badge-info">In Progress</span>
+                                                    {% elif complaint.status == 'resolved' %}
+                                                        <span class="badge badge-success">Resolved</span>
+                                                    {% else %}
+                                                        <span class="badge badge-secondary">{{ complaint.status|title }}</span>
+                                                    {% endif %}
+                                                </td>
+                                                <td>{{ complaint.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                                                <td>
+                                                    <a href="{{ url_for('customer_complaint_detail', complaint_id=complaint.id) }}"
+                                                       class="btn btn-sm btn-outline-primary">
+                                                        <i class="fas fa-eye"></i> View
+                                                    </a>
+                                                </td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    {% else %}
+                        <div class="card">
+                            <div class="card-body text-center">
+                                <i class="fas fa-exclamation-triangle fa-3x text-muted mb-3"></i>
+                                <h5>No complaints found</h5>
+                                <p>You haven't submitted any complaints yet.</p>
+                                <a href="{{ url_for('customer_new_complaint') }}" class="btn btn-primary">
+                                    <i class="fas fa-plus"></i> Submit Your First Complaint
+                                </a>
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </main>
+    </div>
+</div>
+{% endblock %}

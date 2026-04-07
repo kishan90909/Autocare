@@ -1,0 +1,273 @@
+{% extends "invoice_base.html" %}
+
+{% block title %}Workshop - Invoice Preview #{{ invoice_data.booking_id }} - AutoCare{% endblock %}
+
+{% block content %}
+<!-- WORKSHOP-SPECIFIC HEADER with Flash Messages -->
+<div class="container-fluid mb-4">
+  <!-- Flash Messages -->
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      <div class="row">
+        <div class="col-12">
+          {% for category, message in messages %}
+            <div class="alert alert-{{ 'success' if category == 'success' else 'danger' if category == 'error' else 'info' }} alert-dismissible fade show mb-3" role="alert">
+              {{ message }}
+              <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+    {% endif %}
+  {% endwith %}
+
+  <!-- Workshop Header Buttons -->
+  <div class="row mb-4">
+    <div class="col-auto">
+      <h2 class="h4 mb-2">
+        <i class="fas fa-file-invoice-dollar text-success me-2"></i>
+        Invoice Preview #{{ invoice_data.booking_id }}
+      </h2>
+      <p class="text-muted mb-0 small">Professional format - Ready for PDF generation & customer delivery</p>
+    </div>
+    <div class="col-auto ms-auto">
+      <div class="btn-group" role="group">
+        <a href="{{ url_for('workshop_generate_invoice', booking_id=invoice_data.booking_id) }}" class="btn btn-success btn-lg">
+          <i class="fas fa-download me-1"></i>Generate & Download PDF
+        </a>
+        <a href="{{ url_for('workshop_invoices') }}" class="btn btn-outline-secondary btn-lg">
+          <i class="fas fa-list me-1"></i>My Invoices
+        </a>
+        <a href="{{ url_for('workshop_bookings') }}" class="btn btn-outline-primary btn-lg">
+          <i class="fas fa-calendar-check me-1"></i>Bookings
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- UNIFIED INVOICE CONTENT (inherits from invoice_base.html) -->
+{{ super() }}
+{% endblock %}
+
+  <!-- Invoice Preview -->
+  <div class="container py-5">
+    <div class="row">
+      <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+          <h1>
+            <i class="fas fa-file-invoice text-primary me-2"></i>Invoice Preview
+          </h1>
+          <div>
+            <a href="{{ url_for('workshop_invoices') }}" class="btn btn-outline-secondary me-2">
+              <i class="fas fa-arrow-left me-1"></i>Back to Invoices
+            </a>
+            <a href="{{ url_for('workshop_generate_invoice', booking_id=booking.id) }}" class="btn btn-success">
+              <i class="fas fa-download me-1"></i>Generate PDF
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Invoice Content -->
+    <div class="row">
+      <div class="col-12">
+        <div class="card">
+          <div class="card-body">
+            <!-- Invoice Header -->
+            <div class="row mb-4">
+              <div class="col-md-6">
+                <h2 class="text-primary mb-3">AutoCare Services</h2>
+                <p class="mb-1">123 Main Street, Mumbai - 400001</p>
+                <p class="mb-1">Phone: +91-9876543210</p>
+                <p class="mb-1">Email: info@autocare.com</p>
+              </div>
+              <div class="col-md-6 text-end">
+                <h4>INVOICE</h4>
+            <p class="mb-1"><strong>Invoice #:</strong> INV-{{ '%04d' % booking.id }}</p>
+                <p class="mb-1"><strong>Date:</strong> {{ datetime.utcnow().strftime('%Y-%m-%d') }}</p>
+                <p class="mb-1"><strong>Booking #:</strong> {{ booking.id }}</p>
+              </div>
+            </div>
+
+            <!-- Customer Information -->
+            <div class="row mb-4">
+              <div class="col-md-6">
+                <h5 class="text-muted">Bill To:</h5>
+                <h4>{{ customer.username }}</h4>
+                <p class="mb-1">{{ customer.email }}</p>
+                {% if customer.profile.phone %}
+                  <p class="mb-1">{{ customer.profile.phone }}</p>
+                {% endif %}
+                {% if customer.profile.address %}
+                  <p class="mb-0">{{ customer.profile.address }}</p>
+                {% endif %}
+              </div>
+              <div class="col-md-6">
+                <h5 class="text-muted">Workshop:</h5>
+                <h4>{{ workshop.username }}</h4>
+                <p class="mb-1">{{ workshop.details.address }}</p>
+                <p class="mb-0">{{ workshop.details.phone }}</p>
+              </div>
+            </div>
+
+            <!-- Services Table -->
+            <div class="table-responsive mb-4">
+              <table class="table table-bordered">
+                <thead class="table-light">
+                  <tr>
+                    <th>Sr. No.</th>
+                    <th>Service Description</th>
+                    <th>Quantity</th>
+                    <th>Rate</th>
+                    <th>Amount</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for service in booking.services %}
+                  <tr>
+                    <td>{{ loop.index }}</td>
+                    <td>{{ service.name }}</td>
+                    <td>1</td>
+                    <td>₹{{ "%.2f"|format(service.price) }}</td>
+                    <td>₹{{ "%.2f"|format(service.price) }}</td>
+                  </tr>
+                  {% endfor %}
+                  <tr class="table-primary">
+                    <td colspan="4" class="text-end"><strong>Total Amount</strong></td>
+                    <td><strong>₹{{ "%.2f"|format(booking.total_cost) }}</strong></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Additional Information -->
+            <div class="row">
+              <div class="col-md-6">
+                <h6>Booking Information:</h6>
+                <p class="mb-1"><strong>Booking Date:</strong> {{ booking.created_at.strftime('%Y-%m-%d %H:%M') }}</p>
+                <p class="mb-1"><strong>Completion Date:</strong>
+                  {% if booking.updated_at %}
+                    {{ booking.updated_at.strftime('%Y-%m-%d %H:%M') }}
+                  {% else %}
+                    <span class="text-muted">Not completed yet</span>
+                  {% endif %}
+                </p>
+                {% if booking.vehicle_info %}
+                  <p class="mb-1"><strong>Vehicle Info:</strong> {{ booking.vehicle_info }}</p>
+                {% endif %}
+              </div>
+              <div class="col-md-6">
+                <h6>Payment Information:</h6>
+                <p class="mb-1"><strong>Payment Status:</strong>
+                  <span class="badge bg-{{ 'success' if booking.payment_status == 'completed' else 'warning' }}">
+                    {{ booking.payment_status|title }}
+                  </span>
+                </p>
+                <p class="mb-1"><strong>Amount Due:</strong> ₹{{ "%.2f"|format(booking.total_cost) }}</p>
+                <p class="mb-0"><strong>Payment Methods:</strong> UPI, Credit/Debit Cards, Net Banking</p>
+              </div>
+            </div>
+
+            <!-- Status History -->
+            {% if booking.status_history %}
+            <div class="row mt-4">
+              <div class="col-12">
+                <h6>Service History:</h6>
+                <div class="timeline">
+                  {% for status in booking.status_history[-5:] %}
+                  <div class="timeline-item">
+                    <div class="timeline-marker bg-{{ 'success' if status.status == 'completed' else 'primary' if status.status == 'in_progress' else 'info' if status.status == 'accepted' else 'warning' }}"></div>
+                    <div class="timeline-content">
+                      <h6 class="timeline-title">{{ status.status|title }}</h6>
+                      <p class="timeline-text">{{ status.message }}</p>
+                      <small class="text-muted">{{ status.timestamp.strftime('%Y-%m-%d %H:%M') }}</small>
+                    </div>
+                  </div>
+                  {% endfor %}
+                </div>
+              </div>
+            </div>
+            {% endif %}
+
+            <!-- Footer Note -->
+            <div class="row mt-4">
+              <div class="col-12">
+                <div class="alert alert-info">
+                  <i class="fas fa-info-circle me-2"></i>
+                  <strong>Note:</strong> This is a preview of your invoice. Click "Generate PDF" to download the official invoice with AutoCare watermark.
+                </div>
+                <div class="alert alert-success">
+                  <i class="fas fa-bell me-2"></i>
+                  <strong>Customer Notifications:</strong> When you generate the PDF, the customer will receive SMS and email notifications with invoice details and download link.
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="bg-dark text-light py-4 mt-5">
+    <div class="container text-center">
+      <p>&copy; {{ datetime.utcnow().year }} AutoCare Comprehensive System. All rights reserved.</p>
+    </div>
+  </footer>
+
+  <!-- Custom JS -->
+  <script src="{{ url_for('static', filename='js/script_fixed.js') }}"></script>
+
+  <style>
+    .timeline {
+      position: relative;
+      padding-left: 30px;
+    }
+
+    .timeline::before {
+      content: '';
+      position: absolute;
+      left: 15px;
+      top: 0;
+      bottom: 0;
+      width: 2px;
+      background: #dee2e6;
+    }
+
+    .timeline-item {
+      position: relative;
+      margin-bottom: 20px;
+    }
+
+    .timeline-marker {
+      position: absolute;
+      left: -23px;
+      top: 0;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      border: 2px solid #fff;
+    }
+
+    .timeline-content {
+      background: #f8f9fa;
+      padding: 15px;
+      border-radius: 8px;
+      border-left: 4px solid #007bff;
+    }
+
+    .timeline-title {
+      margin: 0 0 5px 0;
+      font-size: 1rem;
+      font-weight: 600;
+    }
+
+    .timeline-text {
+      margin: 0 0 5px 0;
+      color: #6c757d;
+    }
+  </style>
+</body>
+</html>

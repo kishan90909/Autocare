@@ -1,0 +1,481 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>My Bookings - AutoCare Comprehensive System</title>
+
+  <!-- Bootstrap CSS (CDN) -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+  <!-- Font Awesome for Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Your custom CSS -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+
+  <style>
+    .rating-stars {
+      display: inline-block;
+      font-size: 2rem;
+      cursor: pointer;
+    }
+
+    .rating-stars input {
+      display: none;
+    }
+
+    .rating-stars label {
+      color: #ddd;
+      transition: color 0.2s;
+      margin: 0 2px;
+    }
+
+    .rating-stars label:hover,
+    .rating-stars label:hover ~ label,
+    .rating-stars input:checked ~ label {
+      color: #ffc107;
+    }
+
+    .rating-stars input:checked + label {
+      color: #ffc107;
+    }
+  </style>
+
+  <!-- jQuery (CDN) -->
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+  <!-- Bootstrap JS (CDN) -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</head>
+<body>
+  <!-- Navbar -->
+  <nav class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top">
+    <div class="container">
+      <a class="navbar-brand" href="{{ url_for('index') }}">
+        <i class="fas fa-car me-2"></i>AutoCare
+      </a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#nav" aria-controls="nav" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="nav">
+        <ul class="navbar-nav me-auto">
+          <li class="nav-item">
+            <a class="nav-link" href="{{ url_for('index') }}">
+              <i class="fas fa-home me-1"></i>Home
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="{{ url_for('about') }}">
+              <i class="fas fa-info-circle me-1"></i>About
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="{{ url_for('locate_garages') }}">
+              <i class="fas fa-map-marker-alt me-1"></i>Find Garages
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="{{ url_for('contact') }}">
+              <i class="fas fa-phone me-1"></i>Contact
+            </a>
+          </li>
+        </ul>
+        <ul class="navbar-nav ms-auto">
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" href="#" id="customerDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+              <i class="fas fa-user me-1"></i>{{ session.get('username') }}
+            </a>
+            <ul class="dropdown-menu" aria-labelledby="customerDropdown">
+              <li><a class="dropdown-item" href="{{ url_for('customer_dashboard') }}">
+                <i class="fas fa-tachometer-alt me-2"></i>Dashboard
+              </a></li>
+              <li><a class="dropdown-item" href="{{ url_for('customer_profile') }}">
+                <i class="fas fa-user-edit me-2"></i>Profile
+              </a></li>
+              <li><a class="dropdown-item" href="{{ url_for('book_service') }}">
+                <i class="fas fa-calendar-plus me-2"></i>Book Service
+              </a></li>
+              <li><a class="dropdown-item active" href="{{ url_for('customer_bookings') }}">
+                <i class="fas fa-list me-2"></i>My Bookings
+              </a></li>
+              <li><hr class="dropdown-divider"></li>
+              <li><a class="dropdown-item" href="{{ url_for('logout') }}">
+                <i class="fas fa-sign-out-alt me-2"></i>Logout
+              </a></li>
+            </ul>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Flash Messages -->
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      {% for category, message in messages %}
+        <div class="alert alert-{{ 'success' if category == 'success' else 'danger' if category == 'error' else 'info' }} alert-dismissible fade show" role="alert">
+          {{ message }}
+          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+      {% endfor %}
+    {% endif %}
+  {% endwith %}
+
+  <!-- My Bookings -->
+  <div class="container-fluid">
+    <div class="row">
+      <!-- Sidebar -->
+      <nav class="col-md-2 d-none d-md-block bg-light sidebar">
+        <div class="sidebar-sticky">
+          <h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-4 mb-1 text-muted">
+            <span>Customer Panel</span>
+          </h6>
+          <ul class="nav flex-column">
+            <li class="nav-item">
+              <a class="nav-link" href="{{ url_for('customer_dashboard') }}">
+                <i class="fas fa-tachometer-alt"></i> Dashboard
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="{{ url_for('book_service') }}">
+                <i class="fas fa-plus-circle"></i> Book Service
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link active" href="{{ url_for('customer_bookings') }}">
+                <i class="fas fa-calendar-check"></i> My Bookings
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="{{ url_for('customer_service_tracking') }}">
+                <i class="fas fa-eye"></i> Track Services
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="{{ url_for('customer_complaints') }}">
+                <i class="fas fa-exclamation-triangle"></i> My Complaints
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="{{ url_for('customer_profile') }}">
+                <i class="fas fa-user"></i> Profile
+              </a>
+            </li>
+          </ul>
+        </div>
+      </nav>
+
+      <!-- Main content -->
+      <main role="main" class="col-md-9 ml-sm-auto col-lg-10 px-4">
+        <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+          <h1 class="h2">My Bookings</h1>
+          <div class="btn-toolbar mb-2 mb-md-0">
+            <a href="{{ url_for('book_service') }}" class="btn btn-primary">
+              <i class="fas fa-plus"></i> Book New Service
+            </a>
+          </div>
+        </div>
+
+    <!-- Booking Stats -->
+    <div class="row g-4 mb-5">
+      <div class="col-md-3">
+        <div class="card text-center">
+          <div class="card-body">
+            <i class="fas fa-calendar-check fa-2x text-primary mb-2"></i>
+            <h4>{{ bookings|length }}</h4>
+            <p class="text-muted">Total Bookings</p>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="card text-center">
+          <div class="card-body">
+            <i class="fas fa-clock fa-2x text-warning mb-2"></i>
+            <h4>{{ bookings|selectattr('status', 'equalto', 'pending')|list|length }}</h4>
+            <p class="text-muted">Pending</p>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="card text-center">
+          <div class="card-body">
+            <i class="fas fa-check-circle fa-2x text-success mb-2"></i>
+            <h4>{{ bookings|selectattr('status', 'equalto', 'completed')|list|length }}</h4>
+            <p class="text-muted">Completed</p>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="card text-center">
+          <div class="card-body">
+            <i class="fas fa-times-circle fa-2x text-danger mb-2"></i>
+            <h4>{{ bookings|selectattr('status', 'equalto', 'cancelled')|list|length }}</h4>
+            <p class="text-muted">Cancelled</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bookings Table -->
+    <div class="row g-4">
+      <div class="col-12">
+        <div class="card">
+          <div class="card-header">
+            <h5 class="mb-0">
+              <i class="fas fa-calendar-check me-2"></i>All Bookings
+            </h5>
+          </div>
+          <div class="card-body">
+            {% if bookings %}
+              <div class="table-responsive">
+                <table class="table table-striped">
+                  <thead>
+                    <tr>
+                      <th>Booking ID</th>
+                      <th>Services</th>
+                      <th>Total Cost</th>
+                      <th>Status</th>
+                      <th>Workshop</th>
+                      <th>Date</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for booking in bookings %}
+                    <tr>
+                      <td>
+                        <strong>#{{ booking.id }}</strong>
+                      </td>
+                      <td>
+                        {% for service in booking.services %}
+                          <span class="badge bg-secondary me-1">{{ service.name }}</span>
+                        {% endfor %}
+                      </td>
+                      <td>
+                        <strong class="text-success">₹{{ "%.2f"|format(booking.total_cost) }}</strong>
+                      </td>
+                      <td>
+                        {% if booking.status == 'pending' %}
+                          <span class="badge bg-warning">Pending</span>
+                        {% elif booking.status == 'assigned' %}
+                          <span class="badge bg-info">Assigned</span>
+                        {% elif booking.status == 'completed' %}
+                          <span class="badge bg-success">Completed</span>
+                        {% elif booking.status == 'cancelled' %}
+                          <span class="badge bg-danger">Cancelled</span>
+                        {% else %}
+                          <span class="badge bg-secondary">{{ booking.status|title }}</span>
+                        {% endif %}
+                      </td>
+                      <td>
+                        {{ booking.workshop_name or 'Not Assigned' }}
+                      </td>
+                      <td>
+                        {{ booking.created_at.strftime('%Y-%m-%d %H:%M') }}
+                      </td>
+                      <td>
+                        {% if booking.status == 'completed' %}
+                          <button class="btn btn-sm btn-outline-primary me-1" data-booking-id="{{ booking.id }}" onclick="rateBooking(this)">
+                            <i class="fas fa-star me-1"></i>Rate
+                          </button>
+                          <a href="{{ url_for('customer_invoice_view', booking_id=booking.id) }}" class="btn btn-sm btn-outline-info me-1" title="Preview Invoice">
+                            <i class="fas fa-eye me-1"></i>View Invoice
+                          </a>
+                          <a href="{{ url_for('customer_invoice', booking_id=booking.id) }}" class="btn btn-sm btn-outline-success" title="Download Invoice PDF">
+                            <i class="fas fa-download me-1"></i>Download
+                          </a>
+                        {% elif booking.status == 'pending' %}
+                          <button class="btn btn-sm btn-outline-danger" onclick="cancelBooking('{{ booking.id }}')">
+                            <i class="fas fa-times me-1"></i>Cancel
+                          </button>
+                        {% endif %}
+                      </td>
+                    </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+            {% else %}
+              <div class="alert alert-info text-center">
+                <i class="fas fa-info-circle fa-2x mb-3"></i>
+                <h5>No bookings yet</h5>
+                <p>You haven't made any bookings yet. <a href="{{ url_for('book_service') }}">Book your first service!</a></p>
+              </div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="bg-dark text-light py-4 mt-5">
+    <div class="container text-center">
+      <p>&copy; {{ datetime.utcnow().year }} AutoCare Comprehensive System. All rights reserved.</p>
+    </div>
+  </footer>
+
+  <script>
+    function rateBooking(button) {
+      const bookingId = button.getAttribute('data-booking-id');
+      // Create a modal for rating
+      const modal = document.createElement('div');
+      modal.className = 'modal fade';
+      modal.innerHTML = `
+        <div class="modal-dialog">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title">Rate Your Service</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+              <form id="ratingForm" method="POST" action="/customer/rate/' + bookingId + '">
+                <div class="mb-3">
+                  <label class="form-label">Rating</label>
+                  <div class="rating-stars mb-3" id="ratingStars">
+                    <input type="radio" id="star1" name="rating" value="1" required>
+                    <label for="star1" title="1 star">★</label>
+                    <input type="radio" id="star2" name="rating" value="2">
+                    <label for="star2" title="2 stars">★</label>
+                    <input type="radio" id="star3" name="rating" value="3">
+                    <label for="star3" title="3 stars">★</label>
+                    <input type="radio" id="star4" name="rating" value="4">
+                    <label for="star4" title="4 stars">★</label>
+                    <input type="radio" id="star5" name="rating" value="5">
+                    <label for="star5" title="5 stars">★</label>
+                  </div>
+                  <div id="ratingText" class="text-muted small mt-1">Click to rate</div>
+                </div>
+                <div class="mb-3">
+                  <label for="comment" class="form-label">Comment (Optional)</label>
+                  <textarea class="form-control" name="comment" id="comment" rows="3" placeholder="Share your experience..."></textarea>
+                </div>
+                <div class="modal-footer">
+                  <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                  <button type="submit" class="btn btn-primary">Submit Rating</button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      `;
+
+      document.body.appendChild(modal);
+      const modalInstance = new bootstrap.Modal(modal);
+      modalInstance.show();
+
+      // Add form submission handler
+      const form = modal.querySelector('#ratingForm');
+      form.addEventListener('submit', function(e) {
+        e.preventDefault(); // Prevent default form submission
+
+        const rating = form.querySelector('input[name="rating"]:checked');
+        if (!rating) {
+          alert('Please select a rating');
+          return;
+        }
+
+        const comment = form.querySelector('#comment').value;
+
+        // Create a new form and submit it
+        const submitForm = document.createElement('form');
+        submitForm.method = 'POST';
+        submitForm.action = '/customer/rate/' + bookingId;
+
+        const ratingInput = document.createElement('input');
+        ratingInput.type = 'hidden';
+        ratingInput.name = 'rating';
+        ratingInput.value = rating.value;
+
+        const commentInput = document.createElement('input');
+        commentInput.type = 'hidden';
+        commentInput.name = 'comment';
+        commentInput.value = comment;
+
+        submitForm.appendChild(ratingInput);
+        submitForm.appendChild(commentInput);
+        document.body.appendChild(submitForm);
+        submitForm.submit();
+      });
+
+      modal.addEventListener('hidden.bs.modal', function() {
+        document.body.removeChild(modal);
+      });
+    }
+
+    function cancelBooking(bookingId) {
+      if (confirm('Are you sure you want to cancel this booking?')) {
+        // Create a form to submit POST request
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = `/cancel_booking/${bookingId}`;
+        document.body.appendChild(form);
+        form.submit();
+      }
+    }
+
+    // Interactive rating functionality
+    document.addEventListener('DOMContentLoaded', function() {
+      const ratingStars = document.getElementById('ratingStars');
+      const ratingText = document.getElementById('ratingText');
+
+      if (ratingStars && ratingText) {
+        const stars = ratingStars.querySelectorAll('input[type="radio"]');
+        const labels = ratingStars.querySelectorAll('label');
+
+        labels.forEach((label, index) => {
+          label.addEventListener('mouseenter', function() {
+            const rating = index + 1;
+            updateRatingText(rating);
+            highlightStars(rating);
+          });
+
+          label.addEventListener('mouseleave', function() {
+            const checkedStar = ratingStars.querySelector('input:checked');
+            if (checkedStar) {
+              const rating = parseInt(checkedStar.value);
+              updateRatingText(rating);
+              highlightStars(rating);
+            } else {
+              updateRatingText(0);
+              highlightStars(0);
+            }
+          });
+
+          label.addEventListener('click', function() {
+            const rating = index + 1;
+            updateRatingText(rating);
+          });
+        });
+
+        function updateRatingText(rating) {
+          const texts = ['', 'Poor', 'Fair', 'Good', 'Very Good', 'Excellent'];
+          ratingText.textContent = rating > 0 ? `${rating} star${rating > 1 ? 's' : ''} - ${texts[rating]}` : 'Click to rate';
+        }
+
+        function highlightStars(rating) {
+          labels.forEach((label, index) => {
+            if (index + 1 <= rating) {
+              label.style.color = '#ffc107';
+            } else {
+              label.style.color = '#ddd';
+            }
+          });
+        }
+      }
+    });
+  </script>
+
+  <!-- Custom JS -->
+  <script src="{{ url_for('static', filename='js/script_fixed.js') }}"></script>
+</body>
+</html>

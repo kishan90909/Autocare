@@ -1,0 +1,988 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>System Logs & Reports - AutoCare Admin</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdn.datatables.net/1.11.5/css/dataTables.bootstrap5.min.css" rel="stylesheet">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.11.5/js/dataTables.bootstrap5.min.js"></script>
+    <style>
+        .log-card {
+            transition: transform 0.2s;
+            border: none;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .log-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+        .log-level {
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.8em;
+            font-weight: bold;
+        }
+        .log-level.ERROR { background-color: #f8d7da; color: #721c24; }
+        .log-level.WARNING { background-color: #fff3cd; color: #856404; }
+        .log-level.INFO { background-color: #d1ecf1; color: #0c5460; }
+        .log-level.DEBUG { background-color: #e2e3e5; color: #383d41; }
+        .log-level.CRITICAL { background-color: #f5c6cb; color: #721c24; }
+        .stats-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin: 20px 0;
+        }
+        .log-entry {
+            border-left: 4px solid #007bff;
+            padding-left: 15px;
+            margin-bottom: 15px;
+        }
+        .log-entry.ERROR {
+            border-left-color: #dc3545;
+        }
+        .log-entry.WARNING {
+            border-left-color: #ffc107;
+        }
+        .log-entry.CRITICAL {
+            border-left-color: #dc3545;
+            border-left-width: 6px;
+        }
+        .filter-section {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .export-btn {
+            margin-left: 10px;
+        }
+        .real-time-indicator {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background-color: #28a745;
+            animation: pulse 2s infinite;
+        }
+        .performance-metric {
+            background-color: #f8f9fa;
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 10px;
+        }
+        .metric-value {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #007bff;
+        }
+        .metric-label {
+            font-size: 0.9em;
+            color: #6c757d;
+        }
+        .alert-threshold {
+            border-left: 4px solid #ffc107;
+            background-color: #fff8e1;
+        }
+        .critical-threshold {
+            border-left: 4px solid #dc3545;
+            background-color: #f8d7da;
+        }
+        .log-stream {
+            max-height: 400px;
+            overflow-y: auto;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            padding: 10px;
+            background-color: #f8f9fa;
+        }
+        .log-stream-item {
+            padding: 5px 0;
+            border-bottom: 1px solid #e9ecef;
+            font-family: monospace;
+            font-size: 0.9em;
+        }
+        .log-stream-item:last-child {
+            border-bottom: none;
+        }
+        .system-status {
+            position: relative;
+        }
+        .status-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 8px;
+        }
+        .status-dot.online { background-color: #28a745; }
+        .status-dot.offline { background-color: #dc3545; }
+        .status-dot.warning { background-color: #ffc107; }
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="#"><i class="fas fa-car"></i> AutoCare Admin</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/admin/dashboard"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/admin/workshops"><i class="fas fa-tools"></i> Workshops</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/admin/bookings"><i class="fas fa-calendar-check"></i> Bookings</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="#"><i class="fas fa-chart-line"></i> Logs & Reports</a>
+                    </li>
+                </ul>
+                <ul class="navbar-nav">
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-user"></i> Admin
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="#"><i class="fas fa-user-cog"></i> Profile Settings</a></li>
+                            <li><a class="dropdown-item" href="#"><i class="fas fa-bell"></i> Notifications</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="/logout"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid mt-4">
+        <!-- Page Header -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <h2><i class="fas fa-chart-line"></i> System Logs & Reports</h2>
+                <p class="text-muted">Monitor system activity, view logs, and generate comprehensive reports</p>
+            </div>
+        </div>
+
+        <!-- Statistics Cards -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="card log-card stats-card">
+                    <div class="card-body text-center">
+                        <i class="fas fa-exclamation-triangle fa-2x mb-2"></i>
+                        <h3 class="card-title">{{ error_count }}</h3>
+                        <p class="card-text">Errors</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card log-card">
+                    <div class="card-body text-center">
+                        <i class="fas fa-exclamation-circle fa-2x text-warning mb-2"></i>
+                        <h3 class="card-title">{{ warning_count }}</h3>
+                        <p class="card-text">Warnings</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card log-card">
+                    <div class="card-body text-center">
+                        <i class="fas fa-info-circle fa-2x text-info mb-2"></i>
+                        <h3 class="card-title">{{ info_count }}</h3>
+                        <p class="card-text">Info</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card log-card">
+                    <div class="card-body text-center">
+                        <i class="fas fa-bug fa-2x text-secondary mb-2"></i>
+                        <h3 class="card-title">{{ debug_count }}</h3>
+                        <p class="card-text">Debug</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filters and Export -->
+        <div class="filter-section">
+            <div class="row">
+                <div class="col-md-3">
+                    <label class="form-label">Date Range</label>
+                    <select class="form-select" id="dateRange">
+                        <option value="today">Today</option>
+                        <option value="week">This Week</option>
+                        <option value="month" selected>This Month</option>
+                        <option value="custom">Custom Range</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Log Level</label>
+                    <select class="form-select" id="logLevel">
+                        <option value="all" selected>All Levels</option>
+                        <option value="ERROR">Error</option>
+                        <option value="WARNING">Warning</option>
+                        <option value="INFO">Info</option>
+                        <option value="DEBUG">Debug</option>
+                        <option value="CRITICAL">Critical</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Category</label>
+                    <select class="form-select" id="logCategory">
+                        <option value="all" selected>All Categories</option>
+                        <option value="auth">Authentication</option>
+                        <option value="booking">Booking</option>
+                        <option value="payment">Payment</option>
+                        <option value="system">System</option>
+                        <option value="user">User Activity</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Actions</label>
+                    <div class="d-grid gap-2">
+                        <button class="btn btn-primary" onclick="applyFilters()">
+                            <i class="fas fa-filter"></i> Apply Filters
+                        </button>
+                        <button class="btn btn-outline-success" onclick="exportLogs()">
+                            <i class="fas fa-download"></i> Export
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Real-time System Monitoring -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card log-card system-status">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5><i class="fas fa-broadcast-tower"></i> Real-time System Monitoring</h5>
+                        <div class="real-time-indicator" title="Real-time monitoring active"></div>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-3">
+                                <div class="performance-metric">
+                                    <div class="metric-value" id="cpu-usage">0%</div>
+                                    <div class="metric-label">CPU Usage</div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="performance-metric">
+                                    <div class="metric-value" id="memory-usage">0%</div>
+                                    <div class="metric-label">Memory Usage</div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="performance-metric">
+                                    <div class="metric-value" id="disk-usage">0%</div>
+                                    <div class="metric-label">Disk Usage</div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="performance-metric">
+                                    <div class="metric-value" id="network-io">0 KB/s</div>
+                                    <div class="metric-label">Network I/O</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row mt-3">
+                            <div class="col-md-6">
+                                <div class="performance-metric">
+                                    <div class="metric-value" id="active-connections">0</div>
+                                    <div class="metric-label">Active Connections</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="performance-metric">
+                                    <div class="metric-value" id="response-time">0ms</div>
+                                    <div class="metric-label">Avg Response Time</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Live Log Stream -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card log-card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5><i class="fas fa-stream"></i> Live Log Stream</h5>
+                        <div class="btn-group btn-group-sm">
+                            <button class="btn btn-outline-success" onclick="startLogStream()" id="startStreamBtn">
+                                <i class="fas fa-play"></i> Start Stream
+                            </button>
+                            <button class="btn btn-outline-danger" onclick="stopLogStream()" id="stopStreamBtn" disabled>
+                                <i class="fas fa-stop"></i> Stop Stream
+                            </button>
+                            <button class="btn btn-outline-secondary" onclick="clearLogStream()">
+                                <i class="fas fa-trash"></i> Clear
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="log-stream" id="logStream">
+                            <div class="log-stream-item text-muted">
+                                <i class="fas fa-info-circle"></i> Click "Start Stream" to begin monitoring logs in real-time...
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- User Management Section -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card log-card">
+                    <div class="card-header">
+                        <h5><i class="fas fa-users-cog"></i> User Management</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-3">
+                                <div class="card border-primary">
+                                    <div class="card-body text-center">
+                                        <i class="fas fa-user-plus fa-2x text-primary mb-2"></i>
+                                        <h6>Pending Approvals</h6>
+                                        <h4 class="text-primary">{{ pending_users }}</h4>
+                                        <button class="btn btn-sm btn-primary" onclick="showUserApprovals()">
+                                            <i class="fas fa-eye"></i> Review
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="card border-success">
+                                    <div class="card-body text-center">
+                                        <i class="fas fa-users fa-2x text-success mb-2"></i>
+                                        <h6>Total Users</h6>
+                                        <h4 class="text-success">{{ total_users }}</h4>
+                                        <button class="btn btn-sm btn-success" onclick="showAllUsers()">
+                                            <i class="fas fa-list"></i> View All
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="card border-info">
+                                    <div class="card-body text-center">
+                                        <i class="fas fa-user-shield fa-2x text-info mb-2"></i>
+                                        <h6>Active Sessions</h6>
+                                        <h4 class="text-info">{{ active_sessions }}</h4>
+                                        <button class="btn btn-sm btn-info" onclick="showActiveSessions()">
+                                            <i class="fas fa-desktop"></i> Monitor
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="card border-warning">
+                                    <div class="card-body text-center">
+                                        <i class="fas fa-user-times fa-2x text-warning mb-2"></i>
+                                        <h6>Suspended Users</h6>
+                                        <h4 class="text-warning">{{ suspended_users }}</h4>
+                                        <button class="btn btn-sm btn-warning" onclick="showSuspendedUsers()">
+                                            <i class="fas fa-gavel"></i> Manage
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <!-- System Logs -->
+            <div class="col-md-8">
+                <div class="card log-card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5><i class="fas fa-list"></i> System Logs</h5>
+                        <div class="btn-group btn-group-sm">
+                            <button class="btn btn-outline-primary active" onclick="showAllLogs()">All</button>
+                            <button class="btn btn-outline-danger" onclick="showErrorsOnly()">Errors</button>
+                            <button class="btn btn-outline-warning" onclick="showWarningsOnly()">Warnings</button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover" id="logsTable">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th>Timestamp</th>
+                                        <th>Level</th>
+                                        <th>Category</th>
+                                        <th>Message</th>
+                                        <th>User</th>
+                                        <th>IP</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for log in logs %}
+                                    <tr class="log-entry {{ log.level }}">
+                                        <td>
+                                            <strong>{{ log.created_at.strftime('%H:%M:%S') }}</strong><br>
+                                            <small class="text-muted">{{ log.created_at.strftime('%d %b %Y') }}</small>
+                                        </td>
+                                        <td>
+                                            <span class="log-level {{ log.level }}">{{ log.level }}</span>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-secondary">{{ log.category }}</span>
+                                        </td>
+                                        <td>
+                                            <div>
+                                                <strong>{{ log.message[:100] }}{% if log.message|length > 100 %}...{% endif %}</strong>
+                                                {% if log.details %}
+                                                <br><small class="text-muted">{{ log.details[:100] }}{% if log.details|length > 100 %}...{% endif %}</small>
+                                                {% endif %}
+                                            </div>
+                                        </td>
+                                        <td>
+                                            {% if log.user_id %}
+                                            <i class="fas fa-user"></i> {{ log.user_name or 'User #' + log.user_id|string }}
+                                            {% else %}
+                                            <span class="text-muted">System</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if log.ip_address %}
+                                            <code>{{ log.ip_address }}</code>
+                                            {% else %}
+                                            <span class="text-muted">-</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Critical Errors -->
+                <div class="card log-card mt-4">
+                    <div class="card-header">
+                        <h5><i class="fas fa-exclamation-triangle"></i> Recent Critical Errors</h5>
+                    </div>
+                    <div class="card-body">
+                        {% for error in critical_errors %}
+                        <div class="log-entry {{ error.level }} mb-3">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div class="flex-grow-1">
+                                    <div class="d-flex align-items-center mb-1">
+                                        <span class="log-level {{ error.level }} me-2">{{ error.level }}</span>
+                                        <small class="text-muted">{{ error.created_at.strftime('%d %b %Y %H:%M:%S') }}</small>
+                                    </div>
+                                    <div>
+                                        <strong>{{ error.message }}</strong>
+                                        {% if error.details %}
+                                        <br><small class="text-muted">{{ error.details }}</small>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                <div class="text-end">
+                                    {% if error.user_id %}
+                                    <small class="text-muted">User: {{ error.user_name or '#' + error.user_id|string }}</small>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Analytics and Charts -->
+            <div class="col-md-4">
+                <!-- Log Level Distribution -->
+                <div class="card log-card">
+                    <div class="card-header">
+                        <h5><i class="fas fa-chart-pie"></i> Log Distribution</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-container">
+                            <canvas id="logLevelChart"></canvas>
+                        </div>
+                        <div class="mt-3">
+                            {% for level, count in log_level_distribution.items() %}
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <div class="d-flex align-items-center">
+                                    <span class="log-level {{ level }} me-2">{{ level }}</span>
+                                    <span>{{ level.title() }}</span>
+                                </div>
+                                <strong>{{ count }}</strong>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Top Categories -->
+                <div class="card log-card mt-4">
+                    <div class="card-header">
+                        <h5><i class="fas fa-tags"></i> Top Categories</h5>
+                    </div>
+                    <div class="card-body">
+                        {% for category, count in top_categories %}
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="badge bg-secondary">{{ category }}</span>
+                            <strong>{{ count }}</strong>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- System Health -->
+                <div class="card log-card mt-4">
+                    <div class="card-header">
+                        <h5><i class="fas fa-heartbeat"></i> System Health</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <div class="d-flex justify-content-between">
+                                <span>Overall Status</span>
+                                <span class="{% if error_rate < 1 %}text-success{% elif error_rate < 5 %}text-warning{% else %}text-danger{% endif %}">
+                                    {% if error_rate < 1 %}🟢 Healthy{% elif error_rate < 5 %}🟡 Warning{% else %}🔴 Critical{% endif %}
+                                </span>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <div class="d-flex justify-content-between">
+                                <span>Error Rate</span>
+                                <strong>{{ "%.2f"|format(error_rate) }}%</strong>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <div class="d-flex justify-content-between">
+                                <span>Total Logs (24h)</span>
+                                <strong>{{ total_logs_24h }}</strong>
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <div class="d-flex justify-content-between">
+                                <span>Active Users</span>
+                                <strong>{{ active_users }}</strong>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- User Management Modal -->
+    <div class="modal fade" id="userManagementModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalTitle">User Management</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="modalContent">
+                    <!-- Content will be loaded dynamically -->
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let logStreamInterval = null;
+        let systemMetricsInterval = null;
+        let eventSource = null;
+
+        // Initialize DataTable
+        $(document).ready(function() {
+            $('#logsTable').DataTable({
+                "pageLength": 10,
+                "ordering": true,
+                "searching": true,
+                "responsive": true,
+                "order": [[0, "desc"]]
+            });
+
+            // Start system metrics monitoring
+            startSystemMetrics();
+        });
+
+        // Real-time System Monitoring Functions
+        function startSystemMetrics() {
+            updateSystemMetrics();
+            systemMetricsInterval = setInterval(updateSystemMetrics, 5000); // Update every 5 seconds
+        }
+
+        function updateSystemMetrics() {
+            fetch('/admin/api/system-metrics')
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('cpu-usage').textContent = data.cpu_usage + '%';
+                    document.getElementById('memory-usage').textContent = data.memory_usage + '%';
+                    document.getElementById('disk-usage').textContent = data.disk_usage + '%';
+                    document.getElementById('network-io').textContent = formatBytes(data.network_io) + '/s';
+                    document.getElementById('active-connections').textContent = data.active_connections;
+                    document.getElementById('response-time').textContent = data.response_time + 'ms';
+
+                    // Update colors based on thresholds
+                    updateMetricColor('cpu-usage', data.cpu_usage, 70, 90);
+                    updateMetricColor('memory-usage', data.memory_usage, 80, 95);
+                    updateMetricColor('disk-usage', data.disk_usage, 85, 95);
+                })
+                .catch(error => {
+                    console.error('Error fetching system metrics:', error);
+                });
+        }
+
+        function updateMetricColor(elementId, value, warningThreshold, criticalThreshold) {
+            const element = document.getElementById(elementId);
+            element.classList.remove('text-success', 'text-warning', 'text-danger');
+
+            if (value >= criticalThreshold) {
+                element.classList.add('text-danger');
+            } else if (value >= warningThreshold) {
+                element.classList.add('text-warning');
+            } else {
+                element.classList.add('text-success');
+            }
+        }
+
+        function formatBytes(bytes) {
+            if (bytes === 0) return '0 B';
+            const k = 1024;
+            const sizes = ['B', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        // Live Log Streaming Functions
+        function startLogStream() {
+            const logStream = document.getElementById('logStream');
+            const startBtn = document.getElementById('startStreamBtn');
+            const stopBtn = document.getElementById('stopStreamBtn');
+
+            // Clear existing logs
+            logStream.innerHTML = '';
+
+            // Disable start button, enable stop button
+            startBtn.disabled = true;
+            stopBtn.disabled = false;
+
+            // Start polling for new logs
+            logStreamInterval = setInterval(fetchNewLogs, 2000); // Fetch every 2 seconds
+
+            // Add initial message
+            addLogEntry('INFO', 'Log streaming started', 'System', new Date().toLocaleTimeString());
+        }
+
+        function stopLogStream() {
+            const startBtn = document.getElementById('startStreamBtn');
+            const stopBtn = document.getElementById('stopStreamBtn');
+
+            // Enable start button, disable stop button
+            startBtn.disabled = false;
+            stopBtn.disabled = true;
+
+            // Stop polling
+            if (logStreamInterval) {
+                clearInterval(logStreamInterval);
+                logStreamInterval = null;
+            }
+
+            // Close EventSource if exists
+            if (eventSource) {
+                eventSource.close();
+                eventSource = null;
+            }
+
+            // Add stop message
+            addLogEntry('INFO', 'Log streaming stopped', 'System', new Date().toLocaleTimeString());
+        }
+
+        function clearLogStream() {
+            document.getElementById('logStream').innerHTML = '';
+        }
+
+        function fetchNewLogs() {
+            fetch('/admin/api/recent-logs')
+                .then(response => response.json())
+                .then(logs => {
+                    logs.forEach(log => {
+                        addLogEntry(log.level, log.message, log.user_name || 'System', log.created_at);
+                    });
+                })
+                .catch(error => {
+                    console.error('Error fetching logs:', error);
+                });
+        }
+
+        function addLogEntry(level, message, user, timestamp) {
+            const logStream = document.getElementById('logStream');
+            const logEntry = document.createElement('div');
+            logEntry.className = 'log-stream-item';
+
+            const levelColors = {
+                'ERROR': 'text-danger',
+                'WARNING': 'text-warning',
+                'INFO': 'text-info',
+                'DEBUG': 'text-secondary',
+                'CRITICAL': 'text-danger'
+            };
+
+            logEntry.innerHTML = `
+                <span class="${levelColors[level] || 'text-muted'}">[${level}]</span>
+                <span class="text-dark">${timestamp}</span>
+                <span class="text-muted">${user}:</span>
+                <span class="text-dark">${message}</span>
+            `;
+
+            logStream.appendChild(logEntry);
+
+            // Keep only last 100 entries
+            while (logStream.children.length > 100) {
+                logStream.removeChild(logStream.firstChild);
+            }
+
+            // Auto-scroll to bottom
+            logStream.scrollTop = logStream.scrollHeight;
+        }
+
+        // Filter functions
+        function applyFilters() {
+            const dateRange = document.getElementById('dateRange').value;
+            const logLevel = document.getElementById('logLevel').value;
+            const logCategory = document.getElementById('logCategory').value;
+
+            // Reload page with filters
+            let url = '/admin/logs_reports?';
+            if (dateRange !== 'all') url += 'date_range=' + dateRange + '&';
+            if (logLevel !== 'all') url += 'log_level=' + logLevel + '&';
+            if (logCategory !== 'all') url += 'category=' + logCategory + '&';
+
+            window.location.href = url;
+        }
+
+        function showAllLogs() {
+            document.querySelectorAll('.log-entry').forEach(entry => {
+                entry.style.display = 'block';
+            });
+        }
+
+        function showErrorsOnly() {
+            document.querySelectorAll('.log-entry').forEach(entry => {
+                if (entry.classList.contains('ERROR') || entry.classList.contains('CRITICAL')) {
+                    entry.style.display = 'block';
+                } else {
+                    entry.style.display = 'none';
+                }
+            });
+        }
+
+        function showWarningsOnly() {
+            document.querySelectorAll('.log-entry').forEach(entry => {
+                if (entry.classList.contains('WARNING')) {
+                    entry.style.display = 'block';
+                } else {
+                    entry.style.display = 'none';
+                }
+            });
+        }
+
+        function exportLogs() {
+            const format = prompt('Export format (csv/json):', 'csv');
+            if (format && (format === 'csv' || format === 'json')) {
+                window.location.href = '/admin/export_logs?format=' + format;
+            }
+        }
+
+        // User Management Functions
+        function showUserApprovals() {
+            // Show modal with pending user approvals
+            fetch('/admin/api/pending-users')
+                .then(response => response.json())
+                .then(users => {
+                    let modalContent = '<div class="list-group">';
+                    users.forEach(user => {
+                        modalContent += `
+                            <div class="list-group-item d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-1">${user.username}</h6>
+                                    <p class="mb-1">${user.email}</p>
+                                    <small class="text-muted">Role: ${user.role} | Registered: ${user.created_at}</small>
+                                </div>
+                                <div>
+                                    <button class="btn btn-sm btn-success me-2" onclick="approveUser(${user.id})">
+                                        <i class="fas fa-check"></i> Approve
+                                    </button>
+                                    <button class="btn btn-sm btn-danger" onclick="rejectUser(${user.id})">
+                                        <i class="fas fa-times"></i> Reject
+                                    </button>
+                                </div>
+                            </div>
+                        `;
+                    });
+                    modalContent += '</div>';
+
+                    document.getElementById('modalContent').innerHTML = modalContent;
+                    document.getElementById('modalTitle').textContent = 'Pending User Approvals';
+                    new bootstrap.Modal(document.getElementById('userManagementModal')).show();
+                });
+        }
+
+        function showAllUsers() {
+            window.location.href = '/admin/users';
+        }
+
+        function showActiveSessions() {
+            fetch('/admin/api/active-sessions')
+                .then(response => response.json())
+                .then(sessions => {
+                    let modalContent = '<div class="list-group">';
+                    sessions.forEach(session => {
+                        modalContent += `
+                            <div class="list-group-item">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h6 class="mb-1">${session.user_name}</h6>
+                                        <p class="mb-1">IP: ${session.ip_address}</p>
+                                        <small class="text-muted">Last Activity: ${session.last_activity}</small>
+                                    </div>
+                                    <button class="btn btn-sm btn-danger" onclick="terminateSession('${session.session_id}')">
+                                        <i class="fas fa-times"></i> Terminate
+                                    </button>
+                                </div>
+                            </div>
+                        `;
+                    });
+                    modalContent += '</div>';
+
+                    document.getElementById('modalContent').innerHTML = modalContent;
+                    document.getElementById('modalTitle').textContent = 'Active User Sessions';
+                    new bootstrap.Modal(document.getElementById('userManagementModal')).show();
+                });
+        }
+
+        function showSuspendedUsers() {
+            fetch('/admin/api/suspended-users')
+                .then(response => response.json())
+                .then(users => {
+                    let modalContent = '<div class="list-group">';
+                    users.forEach(user => {
+                        modalContent += `
+                            <div class="list-group-item">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <h6 class="mb-1">${user.username}</h6>
+                                        <p class="mb-1">${user.email}</p>
+                                        <small class="text-muted">Suspended: ${user.suspended_at}</small>
+                                    </div>
+                                    <button class="btn btn-sm btn-warning" onclick="unsuspendUser(${user.id})">
+                                        <i class="fas fa-undo"></i> Unsuspend
+                                    </button>
+                                </div>
+                            </div>
+                        `;
+                    });
+                    modalContent += '</div>';
+
+                    document.getElementById('modalContent').innerHTML = modalContent;
+                    document.getElementById('modalTitle').textContent = 'Suspended Users';
+                    new bootstrap.Modal(document.getElementById('userManagementModal')).show();
+                });
+        }
+
+        function approveUser(userId) {
+            if (confirm('Are you sure you want to approve this user?')) {
+                fetch('/admin/approve-user/' + userId, { method: 'POST' })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            alert('User approved successfully!');
+                            location.reload();
+                        } else {
+                            alert('Failed to approve user: ' + data.message);
+                        }
+                    });
+            }
+        }
+
+        function rejectUser(userId) {
+            if (confirm('Are you sure you want to reject this user?')) {
+                fetch('/admin/reject-user/' + userId, { method: 'POST' })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            alert('User rejected successfully!');
+                            location.reload();
+                        } else {
+                            alert('Failed to reject user: ' + data.message);
+                        }
+                    });
+            }
+        }
+
+        function terminateSession(sessionId) {
+            if (confirm('Are you sure you want to terminate this session?')) {
+                fetch('/admin/terminate-session/' + sessionId, { method: 'POST' })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            alert('Session terminated successfully!');
+                            location.reload();
+                        } else {
+                            alert('Failed to terminate session: ' + data.message);
+                        }
+                    });
+            }
+        }
+
+        function unsuspendUser(userId) {
+            if (confirm('Are you sure you want to unsuspend this user?')) {
+                fetch('/admin/unsuspend-user/' + userId, { method: 'POST' })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            alert('User unsuspended successfully!');
+                            location.reload();
+                        } else {
+                            alert('Failed to unsuspend user: ' + data.message);
+                        }
+                    });
+            }
+        }
+
+        // Chart initialization (if Chart.js is available)
+        document.addEventListener('DOMContentLoaded', function() {
+            // This would initialize charts if Chart.js is loaded
+            console.log('Log level distribution loaded');
+        });
+    </script>
+</body>
+</html>

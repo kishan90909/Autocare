@@ -1,0 +1,298 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Customer Dashboard - AutoCare Comprehensive System</title>
+
+  <!-- Bootstrap CSS (CDN) -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+  <!-- Font Awesome for Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Your custom CSS -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+
+  <!-- jQuery (CDN) -->
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+  <!-- Bootstrap JS (CDN) -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</head>
+<body>
+  <!-- Navbar -->
+  <nav class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top">
+    <div class="container">
+      <a class="navbar-brand" href="{{ url_for('index') }}">
+        <i class="fas fa-car me-2"></i>AutoCare
+      </a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#nav" aria-controls="nav" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="nav">
+        <ul class="navbar-nav me-auto">
+          <li class="nav-item">
+            <a class="nav-link" href="{{ url_for('index') }}">
+              <i class="fas fa-home me-1"></i>Home
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="{{ url_for('about') }}">
+              <i class="fas fa-info-circle me-1"></i>About
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="{{ url_for('locate_garages') }}">
+              <i class="fas fa-map-marker-alt me-1"></i>Find Garages
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="{{ url_for('contact') }}">
+              <i class="fas fa-phone me-1"></i>Contact
+            </a>
+          </li>
+        </ul>
+        <ul class="navbar-nav ms-auto">
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" href="#" id="customerDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+              <i class="fas fa-user me-1"></i>{{ session.get('username') }}
+            </a>
+            <ul class="dropdown-menu" aria-labelledby="customerDropdown">
+              <li><a class="dropdown-item active" href="{{ url_for('customer_dashboard') }}">
+                <i class="fas fa-tachometer-alt me-2"></i>Dashboard
+              </a></li>
+              <li><a class="dropdown-item" href="{{ url_for('customer_profile') }}">
+                <i class="fas fa-user-edit me-2"></i>Profile
+              </a></li>
+              <li><a class="dropdown-item" href="{{ url_for('book_service') }}">
+                <i class="fas fa-calendar-plus me-2"></i>Book Service
+              </a></li>
+              <li><a class="dropdown-item" href="{{ url_for('customer_bookings') }}">
+                <i class="fas fa-list me-2"></i>My Bookings
+              </a></li>
+              <li><hr class="dropdown-divider"></li>
+              <li><a class="dropdown-item" href="{{ url_for('logout') }}">
+                <i class="fas fa-sign-out-alt me-2"></i>Logout
+              </a></li>
+            </ul>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Flash Messages -->
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      {% for category, message in messages %}
+        <div class="alert alert-{{ 'success' if category == 'success' else 'danger' if category == 'error' else 'info' }} alert-dismissible fade show" role="alert">
+          {{ message }}
+          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+      {% endfor %}
+    {% endif %}
+  {% endwith %}
+
+  <!-- Dashboard Content -->
+  <div class="container py-5">
+    <!-- Welcome Section -->
+    <div class="row mb-5">
+      <div class="col-12">
+        <div class="card bg-primary text-white">
+          <div class="card-body p-4">
+            <div class="row align-items-center">
+              <div class="col-md-8">
+                <h2 class="card-title mb-2">
+                  <i class="fas fa-tachometer-alt me-2"></i>Welcome back, {{ customer.username }}!
+                </h2>
+                <p class="card-text mb-0">Manage your vehicle services and track your bookings from your dashboard.</p>
+              </div>
+              <div class="col-md-4 text-md-end">
+                <a href="{{ url_for('book_service') }}" class="btn btn-light btn-lg">
+                  <i class="fas fa-plus me-2"></i>Book Service
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Quick Stats -->
+    <div class="row g-4 mb-5">
+      <div class="col-md-3">
+        <div class="card text-center">
+          <div class="card-body">
+            <i class="fas fa-calendar-check fa-2x text-primary mb-2"></i>
+            <h4>{{ bookings|length }}</h4>
+            <p class="text-muted">Total Bookings</p>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="card text-center">
+          <div class="card-body">
+            <i class="fas fa-clock fa-2x text-warning mb-2"></i>
+            <h4>{{ bookings|selectattr('status', 'equalto', 'pending')|list|length }}</h4>
+            <p class="text-muted">Pending</p>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="card text-center">
+          <div class="card-body">
+            <i class="fas fa-check-circle fa-2x text-success mb-2"></i>
+            <h4>{{ bookings|selectattr('status', 'equalto', 'completed')|list|length }}</h4>
+            <p class="text-muted">Completed</p>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="card text-center">
+          <div class="card-body">
+            <i class="fas fa-wallet fa-2x text-info mb-2"></i>
+            <h4>₹{{ "%.2f"|format(bookings|selectattr('status', 'equalto', 'completed')|sum(attribute='total_cost')|default(0)) }}</h4>
+            <p class="text-muted">Total Spent</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="row g-4 mb-5">
+      <div class="col-12">
+        <h3 class="mb-4">
+          <i class="fas fa-bolt text-primary me-2"></i>Quick Actions
+        </h3>
+        <div class="row g-3">
+          <div class="col-md-4">
+            <a href="{{ url_for('book_service') }}" class="text-decoration-none">
+              <div class="card h-100 border-primary hover-shadow">
+                <div class="card-body text-center p-4">
+                  <i class="fas fa-calendar-plus fa-3x text-primary mb-3"></i>
+                  <h5 class="card-title text-primary">Book New Service</h5>
+                  <p class="card-text text-muted">Schedule a new service for your vehicle</p>
+                </div>
+              </div>
+            </a>
+          </div>
+          <div class="col-md-4">
+            <a href="{{ url_for('customer_bookings') }}" class="text-decoration-none">
+              <div class="card h-100 border-info hover-shadow">
+                <div class="card-body text-center p-4">
+                  <i class="fas fa-list fa-3x text-info mb-3"></i>
+                  <h5 class="card-title text-info">View My Bookings</h5>
+                  <p class="card-text text-muted">Check status of your existing bookings</p>
+                </div>
+              </div>
+            </a>
+          </div>
+          <div class="col-md-4">
+            <a href="{{ url_for('customer_profile') }}" class="text-decoration-none">
+              <div class="card h-100 border-success hover-shadow">
+                <div class="card-body text-center p-4">
+                  <i class="fas fa-user-edit fa-3x text-success mb-3"></i>
+                  <h5 class="card-title text-success">Update Profile</h5>
+                  <p class="card-text text-muted">Manage your account information</p>
+                </div>
+              </div>
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Recent Bookings -->
+    <div class="row g-4">
+      <div class="col-12">
+        <div class="card">
+          <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">
+              <i class="fas fa-clock me-2"></i>Recent Bookings
+            </h5>
+            <a href="{{ url_for('customer_bookings') }}" class="btn btn-sm btn-outline-primary">
+              View All <i class="fas fa-arrow-right ms-1"></i>
+            </a>
+          </div>
+          <div class="card-body">
+            {% if bookings %}
+              <div class="table-responsive">
+                <table class="table table-hover">
+                  <thead>
+                    <tr>
+                      <th>Booking ID</th>
+                      <th>Services</th>
+                      <th>Total Cost</th>
+                      <th>Status</th>
+                      <th>Date</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for booking in bookings[:5] %}
+                    <tr>
+                      <td>
+                        <strong>#{{ booking.id }}</strong>
+                      </td>
+                      <td>
+                        {% for service in booking.services %}
+                          <span class="badge bg-secondary me-1">{{ service.name }}</span>
+                        {% endfor %}
+                      </td>
+                      <td>
+                        <strong class="text-success">₹{{ "%.2f"|format(booking.total_cost) }}</strong>
+                      </td>
+                      <td>
+                        {% if booking.status == 'pending' %}
+                          <span class="badge bg-warning">Pending</span>
+                        {% elif booking.status == 'assigned' %}
+                          <span class="badge bg-info">Assigned</span>
+                        {% elif booking.status == 'completed' %}
+                          <span class="badge bg-success">Completed</span>
+                        {% elif booking.status == 'cancelled' %}
+                          <span class="badge bg-danger">Cancelled</span>
+                        {% else %}
+                          <span class="badge bg-secondary">{{ booking.status|title }}</span>
+                        {% endif %}
+                      </td>
+                      <td>
+                        {{ booking.created_at.strftime('%Y-%m-%d') }}
+                      </td>
+                      <td>
+                        <a href="{{ url_for('customer_bookings') }}" class="btn btn-sm btn-outline-primary">
+                          <i class="fas fa-eye me-1"></i>View
+                        </a>
+                      </td>
+                    </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+            {% else %}
+              <div class="alert alert-info text-center">
+                <i class="fas fa-info-circle fa-2x mb-3"></i>
+                <h5>No bookings yet</h5>
+                <p>You haven't made any bookings yet. <a href="{{ url_for('book_service') }}">Book your first service!</a></p>
+              </div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="bg-dark text-light py-4 mt-5">
+    <div class="container text-center">
+      <p>&copy; {{ datetime.utcnow().year }} AutoCare Comprehensive System. All rights reserved.</p>
+    </div>
+  </footer>
+
+  <!-- Custom JS -->
+  <script src="{{ url_for('static', filename='js/script_fixed.js') }}"></script>
+</body>
+</html>

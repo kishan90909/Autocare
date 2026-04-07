@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+
+{% block title %}Assign Workshop - AutoCare{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title mb-0">Assign Workshop to Booking</h3>
+                </div>
+                <div class="card-body">
+                    {% if booking %}
+                    <div class="mb-4">
+                        <h5>Booking Details</h5>
+                        <p><strong>Booking ID:</strong> {{ booking.id }}</p>
+                        <p><strong>Customer ID:</strong> {{ booking.customer_id }}</p>
+                        <p><strong>Status:</strong> {{ booking.status }}</p>
+                        <p><strong>Total Cost:</strong> ${{ "%.2f"|format(booking.total_cost or 0) }}</p>
+                        <p><strong>Created:</strong> {{ booking.created_at }}</p>
+                    </div>
+
+                    <form method="POST">
+                        <div class="mb-3">
+                            <label for="workshop_id" class="form-label">Select Workshop:</label>
+                            <select class="form-select" id="workshop_id" name="workshop_id" required>
+                                <option value="">Choose a workshop...</option>
+                                {% for workshop in workshops %}
+                                <option value="{{ workshop.id }}">{{ workshop.name }} ({{ workshop.email }})</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary">Assign Workshop</button>
+                            <a href="{{ url_for('admin_bookings') }}" class="btn btn-secondary">Cancel</a>
+                        </div>
+                    </form>
+                    {% else %}
+                    <div class="alert alert-danger">
+                        Booking not found.
+                    </div>
+                    <a href="{{ url_for('admin_bookings') }}" class="btn btn-primary">Back to Bookings</a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

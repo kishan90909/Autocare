@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block title %}Booking #{{ booking.id }}{% endblock %}
+{% block content %}
+<div class="container py-4">
+  <div class="card p-3">
+    <h4>Booking #{{ booking.id }} — {{ booking.service_name }}</h4>
+    <p><strong>Vehicle:</strong> {{ booking.vehicle_no }} | <strong>Scheduled:</strong> {{ booking.scheduled_date }}</p>
+    <p><strong>Status:</strong> {{ booking.status }}</p>
+    <p><strong>Worker:</strong> {{ booking.worker_name or 'Not assigned' }}</p>
+    {% if booking.worker_phone %}
+      <p><strong>Worker phone:</strong> {{ booking.worker_phone }}
+        <a href="tel:{{ booking.worker_phone }}" class="btn btn-sm btn-success tel-btn">📞 Call Worker</a>
+      </p>
+    {% endif %}
+
+    {% if session.get('role') == 'customer' %}
+      <!-- Payment button -->
+      {% if not booking.paid %}
+        <form id="payForm" method="post" action="{{ url_for('create_order', booking_id=booking.id) }}">
+          <button id="payBtn" class="btn btn-primary">Pay Now</button>
+        </form>
+      {% else %}
+        <span class="badge bg-success">Paid</span>
+        {% if booking.invoice_id %}
+          <a href="{{ url_for('download_invoice', invoice_id=booking.invoice_id) }}" 
+             class="btn btn-outline-secondary btn-sm ms-2">
+             🧾 Download Invoice
+          </a>
+        {% endif %}
+      {% endif %}
+    {% endif %}
+  </div>
+</div>
+
+<script>
+  // simple xo: create order via fetch and open Razorpay checkout
+  document.getElementById('payForm')?.addEventListener('submit', async function(e){
+    e.preventDefault();
+    const resp = await fetch(this.action, {method: 'POST'});
+    const j = await resp.json();
+    const options = {
+      "key": j.razorpay_key,
+      "amount": j.amount,
+      "currency": j.currency,
+      "order_id": j.order_id,
+      "handler": function (response){
+          // post to server to mark success
+          const form = new FormData();
+          form.append('razorpay_payment_id', response.razorpay_payment_id);
+          form.append('razorpay_order_id', response.razorpay_order_id);
+          fetch("{{ url_for('payment_success') }}", {method:'POST', body: form}).then(()=> location.reload());
+      }
+    };
+    const rzp = new Razorpay(options);
+    rzp.open();
+  });
+</script>
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+{% endblock %}

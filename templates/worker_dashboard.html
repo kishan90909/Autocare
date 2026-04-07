@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container py-4">
+  <h3 class="mb-4">👨‍🔧 Your Assigned Jobs</h3>
+
+  {% if bookings %}
+  <div class="table-responsive">
+    <table class="table table-hover align-middle">
+      <thead class="table-dark">
+        <tr>
+          <th>#</th>
+          <th>Services</th>
+          <th>Total Cost</th>
+          <th>Status</th>
+          <th>Customer</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for b in bookings %}
+        <tr>
+          <td>{{ b.id }}</td>
+          <td>{{ b.services }}</td>
+          <td>₹{{ "%.2f"|format(b.total_cost) }}</td>
+          <td>
+            <span class="badge
+              {% if b.status == 'pending' %} bg-warning text-dark
+              {% elif b.status == 'in_progress' %} bg-info
+              {% elif b.status == 'completed' %} bg-success
+              {% else %} bg-secondary {% endif %}">
+              {{ b.status|capitalize }}
+            </span>
+          </td>
+          <td>
+            {{ b.customer_name }}
+            {% if b.customer_phone %}
+              <br>
+              <a href="tel:{{ b.customer_phone }}" class="btn btn-sm btn-success mt-1">📞 Call</a>
+            {% endif %}
+          </td>
+          <td>
+            <form method="post" action="{{ url_for('worker_update_status') }}" class="d-flex">
+              <input type="hidden" name="booking_id" value="{{ b.id }}">
+              <select name="status" class="form-select form-select-sm me-2" style="width:auto">
+                <option value="in_progress">In Progress</option>
+                <option value="completed">Completed</option>
+              </select>
+              <button class="btn btn-sm btn-primary">Update</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+    <p class="text-center text-muted">No jobs assigned yet.</p>
+  {% endif %}
+</div>
+{% endblock %}

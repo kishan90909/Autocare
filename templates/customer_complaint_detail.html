@@ -1,0 +1,241 @@
+{% extends "base.html" %}
+
+{% block title %}Complaint #{{ complaint.id }} - AutoCare{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <!-- Sidebar -->
+        <nav class="col-md-2 d-none d-md-block bg-light sidebar">
+            <div class="sidebar-sticky">
+                <h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-4 mb-1 text-muted">
+                    <span>Customer Panel</span>
+                </h6>
+                <ul class="nav flex-column">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('customer_dashboard') }}">
+                            <i class="fas fa-tachometer-alt"></i> Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('book_service') }}">
+                            <i class="fas fa-plus-circle"></i> Book Service
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('customer_bookings') }}">
+                            <i class="fas fa-calendar-check"></i> My Bookings
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('customer_service_tracking') }}">
+                            <i class="fas fa-eye"></i> Track Services
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="{{ url_for('customer_complaints') }}">
+                            <i class="fas fa-exclamation-triangle"></i> My Complaints
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('customer_profile') }}">
+                            <i class="fas fa-user"></i> Profile
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </nav>
+
+        <!-- Main content -->
+        <main role="main" class="col-md-9 ml-sm-auto col-lg-10 px-4">
+            <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                <h1 class="h2">Complaint #{{ complaint.id }}</h1>
+                <div class="btn-toolbar mb-2 mb-md-0">
+                    <a href="{{ url_for('customer_complaints') }}" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left"></i> Back to Complaints
+                    </a>
+                </div>
+            </div>
+
+            <!-- Complaint Details -->
+            <div class="row">
+                <div class="col-lg-8">
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <h5 class="mb-0">{{ complaint.subject }}</h5>
+                                <div>
+                                    {% if complaint.priority == 'high' %}
+                                        <span class="badge badge-danger">High Priority</span>
+                                    {% elif complaint.priority == 'medium' %}
+                                        <span class="badge badge-warning">Medium Priority</span>
+                                    {% else %}
+                                        <span class="badge badge-info">Low Priority</span>
+                                    {% endif %}
+
+                                    {% if complaint.status == 'pending' %}
+                                        <span class="badge badge-warning">Pending</span>
+                                    {% elif complaint.status == 'in_progress' %}
+                                        <span class="badge badge-info">In Progress</span>
+                                    {% elif complaint.status == 'resolved' %}
+                                        <span class="badge badge-success">Resolved</span>
+                                    {% else %}
+                                        <span class="badge badge-secondary">{{ complaint.status|title }}</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <strong>Category:</strong> {{ complaint.category|title }}
+                                </div>
+                                <div class="col-md-6">
+                                    <strong>Created:</strong> {{ complaint.created_at.strftime('%Y-%m-%d %H:%M') }}
+                                </div>
+                            </div>
+
+                            {% if complaint.booking_id %}
+                            <div class="row mb-3">
+                                <div class="col-12">
+                                    <strong>Related Booking:</strong> #{{ complaint.booking_id }}
+                                </div>
+                            </div>
+                            {% endif %}
+
+                            <div class="row mb-3">
+                                <div class="col-12">
+                                    <strong>Message:</strong>
+                                    <div class="mt-2 p-3 bg-light rounded">
+                                        {{ complaint.message }}
+                                    </div>
+                                </div>
+                            </div>
+
+                            {% if complaint.response %}
+                            <div class="row">
+                                <div class="col-12">
+                                    <strong>Admin Response:</strong>
+                                    <div class="mt-2 p-3 bg-success text-white rounded">
+                                        {{ complaint.response }}
+                                    </div>
+                                    {% if complaint.updated_at %}
+                                    <small class="text-muted">
+                                        Responded on {{ complaint.updated_at.strftime('%Y-%m-%d %H:%M') }}
+                                    </small>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h6 class="mb-0">Complaint Timeline</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="timeline">
+                                <div class="timeline-item">
+                                    <div class="timeline-marker bg-primary"></div>
+                                    <div class="timeline-content">
+                                        <h6 class="timeline-title">Complaint Submitted</h6>
+                                        <p class="timeline-text">{{ complaint.created_at.strftime('%Y-%m-%d %H:%M') }}</p>
+                                    </div>
+                                </div>
+
+                                {% if complaint.status != 'pending' %}
+                                <div class="timeline-item">
+                                    <div class="timeline-marker bg-info"></div>
+                                    <div class="timeline-content">
+                                        <h6 class="timeline-title">Status Updated</h6>
+                                        <p class="timeline-text">{{ complaint.status|title }}</p>
+                                    </div>
+                                </div>
+                                {% endif %}
+
+                                {% if complaint.response %}
+                                <div class="timeline-item">
+                                    <div class="timeline-marker bg-success"></div>
+                                    <div class="timeline-content">
+                                        <h6 class="timeline-title">Response Received</h6>
+                                        <p class="timeline-text">{{ complaint.updated_at.strftime('%Y-%m-%d %H:%M') if complaint.updated_at else 'Recently' }}</p>
+                                    </div>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card mt-3">
+                        <div class="card-header">
+                            <h6 class="mb-0">Need Help?</h6>
+                        </div>
+                        <div class="card-body">
+                            <p class="small">
+                                If you need to update this complaint or have additional information,
+                                please contact our support team.
+                            </p>
+                            <a href="{{ url_for('contact_support') }}" class="btn btn-sm btn-outline-primary">
+                                <i class="fas fa-envelope"></i> Contact Support
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+</div>
+
+<style>
+.timeline {
+    position: relative;
+    padding-left: 30px;
+}
+
+.timeline::before {
+    content: '';
+    position: absolute;
+    left: 15px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: #e9ecef;
+}
+
+.timeline-item {
+    position: relative;
+    margin-bottom: 20px;
+}
+
+.timeline-marker {
+    position: absolute;
+    left: -22px;
+    top: 5px;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    border: 2px solid #fff;
+}
+
+.timeline-content {
+    background: #f8f9fa;
+    padding: 10px 15px;
+    border-radius: 5px;
+}
+
+.timeline-title {
+    font-size: 14px;
+    margin-bottom: 5px;
+    font-weight: bold;
+}
+
+.timeline-text {
+    font-size: 12px;
+    color: #6c757d;
+    margin-bottom: 0;
+}
+</style>
+{% endblock %}

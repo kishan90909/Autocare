@@ -1,0 +1,133 @@
+{% extends "base.html" %}
+{% block title %}Register - AutoCare Comprehensive System{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+  <div class="row justify-content-center">
+    <div class="col-md-8 col-lg-6">
+      <div class="card shadow">
+        <div class="card-body p-4">
+          <h2 class="card-title text-center mb-4">
+            <i class="fas fa-user-plus text-primary me-2"></i>Register for AutoCare
+          </h2>
+
+          <form method="POST" action="{{ url_for('register') }}" id="registrationForm">
+            <div class="mb-3">
+              <label for="name" class="form-label">Full Name</label>
+              <input type="text" class="form-control" id="name" name="name" required>
+            </div>
+
+            <div class="mb-3">
+              <label for="email" class="form-label">Email Address</label>
+              <input type="email" class="form-control" id="email" name="email" required>
+            </div>
+
+            <div class="mb-3">
+              <label for="password" class="form-label">Password</label>
+              <input type="password" class="form-control" id="password" name="password" required>
+            </div>
+
+            <div class="mb-3">
+              <label for="role" class="form-label">Register as</label>
+              <select class="form-select" id="role" name="role" required onchange="showRoleFields()">
+                <option value="">Select Role</option>
+                <option value="customer">Customer</option>
+                <option value="workshop">Workshop</option>
+              </select>
+            </div>
+
+            <!-- Customer Fields -->
+            <div id="customer-fields" style="display: none;">
+              <div class="mb-3">
+                <label for="customer_phone" class="form-label">Phone Number</label>
+                <input type="tel" class="form-control" id="customer_phone" name="phone">
+              </div>
+              <div class="mb-3">
+                <label for="customer_address" class="form-label">Address</label>
+                <textarea class="form-control" id="customer_address" name="address" rows="2"></textarea>
+              </div>
+            </div>
+
+            <!-- Workshop Fields -->
+            <div id="workshop-fields" style="display: none;">
+              <div class="mb-3">
+                <label for="workshop_phone" class="form-label">Workshop Phone <span class="text-danger">*</span></label>
+                <input type="tel" class="form-control" id="workshop_phone" name="phone" required>
+              </div>
+              <div class="mb-3">
+                <label for="workshop_address" class="form-label">Workshop Address <span class="text-danger">*</span></label>
+                <textarea class="form-control" id="workshop_address" name="address" rows="2" required></textarea>
+              </div>
+              <div class="alert alert-info">
+                <i class="fas fa-info-circle me-2"></i>
+                Workshop accounts require admin approval before you can login.
+              </div>
+            </div>
+
+            <div class="d-grid">
+              <button type="submit" class="btn btn-primary">
+                <i class="fas fa-user-plus me-2"></i>Register
+              </button>
+            </div>
+          </form>
+
+          <div class="text-center mt-3">
+            <p>Already have an account? <a href="{{ url_for('login') }}">Login here</a></p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  function showRoleFields() {
+    const role = document.getElementById('role').value;
+    const customerFields = document.getElementById('customer-fields');
+    const workshopFields = document.getElementById('workshop-fields');
+
+    // Hide all role-specific fields first
+    customerFields.style.display = 'none';
+    workshopFields.style.display = 'none';
+
+    // Show fields based on selected role
+    if (role === 'customer') {
+      customerFields.style.display = 'block';
+    } else if (role === 'workshop') {
+      workshopFields.style.display = 'block';
+    }
+
+    // Update required attributes for form validation
+    updateRequiredFields(role);
+  }
+
+  function updateRequiredFields(role) {
+    const customerPhone = document.getElementById('customer_phone');
+    const customerAddress = document.getElementById('customer_address');
+    const workshopPhone = document.getElementById('workshop_phone');
+    const workshopAddress = document.getElementById('workshop_address');
+
+    // Remove required attributes first
+    customerPhone.required = false;
+    customerAddress.required = false;
+    workshopPhone.required = false;
+    workshopAddress.required = false;
+
+    // Add required attributes based on role
+    if (role === 'customer') {
+      // Customer fields are optional
+    } else if (role === 'workshop') {
+      workshopPhone.required = true;
+      workshopAddress.required = true;
+    }
+  }
+
+  // Initialize on page load
+  document.addEventListener('DOMContentLoaded', function() {
+    const roleSelect = document.getElementById('role');
+    if (roleSelect.value) {
+      showRoleFields();
+    }
+  });
+</script>
+{% endblock %}

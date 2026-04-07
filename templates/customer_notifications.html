@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block title %}Notifications - AutoCare{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+  <div class="row">
+    <div class="col-12">
+      <h2 class="mb-4">
+        <i class="fas fa-bell text-primary me-2"></i>My Notifications
+      </h2>
+
+      {% if notifications %}
+        <div class="row">
+          {% for notification in notifications %}
+          <div class="col-12 mb-3">
+            <div class="card {{ 'border-primary' if not notification.read else '' }}">
+              <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start">
+                  <div class="flex-grow-1">
+                    <h6 class="card-title mb-2">
+                      {% if notification.type == 'booking' %}
+                        <i class="fas fa-calendar-check text-success me-2"></i>
+                      {% elif notification.type == 'payment' %}
+                        <i class="fas fa-credit-card text-info me-2"></i>
+                      {% elif notification.type == 'system' %}
+                        <i class="fas fa-cog text-warning me-2"></i>
+                      {% else %}
+                        <i class="fas fa-info-circle text-primary me-2"></i>
+                      {% endif %}
+                      {{ notification.title }}
+                    </h6>
+                    <p class="card-text mb-2">{{ notification.message }}</p>
+                    <small class="text-muted">
+                      <i class="fas fa-clock me-1"></i>{{ notification.created_at.strftime('%d %b %Y, %H:%M') }}
+                    </small>
+                  </div>
+                  {% if not notification.read %}
+                  <span class="badge bg-primary">New</span>
+                  {% endif %}
+                </div>
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="text-center py-5">
+          <i class="fas fa-bell-slash fa-3x text-muted mb-3"></i>
+          <h5 class="text-muted">No notifications yet</h5>
+          <p class="text-muted">You'll receive notifications about your bookings and services here.</p>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

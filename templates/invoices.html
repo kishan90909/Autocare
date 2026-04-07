@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row justify-content-center mt-5">
+  <div class="col-12">
+    <div class="card shadow-lg border-0 rounded-4">
+      <div class="card-header bg-dark text-white text-center fw-bold py-3">
+        🧾 Invoices
+      </div>
+      <div class="card-body">
+        {% if invoices %}
+        <div class="table-responsive">
+          <table class="table table-hover align-middle">
+            <thead class="table-dark">
+              <tr>
+                <th>Invoice ID</th>
+                <th>Booking ID</th>
+                <th>Customer</th>
+                <th>Services</th>
+                <th>Amount (₹)</th>
+                <th>Status</th>
+                <th>Date Issued</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for invoice in invoices %}
+              <tr>
+                <td>{{ invoice.id }}</td>
+                <td>{{ invoice.booking_id }}</td>
+                <td>{{ invoice.customer_name }}</td>
+                <td>{{ invoice.services }}</td>
+                <td>₹ {{ "%.2f"|format(invoice.amount) }}</td>
+                <td>
+                  {% if invoice.status == 'paid' %}
+                    <span class="badge bg-success px-3 py-2">Paid ✅</span>
+                  {% else %}
+                    <span class="badge bg-danger px-3 py-2">Unpaid ❌</span>
+                  {% endif %}
+                </td>
+                <td>{{ invoice.issued_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                <td>
+                  <a href="{{ url_for('download_invoice', invoice_id=invoice.id) }}" 
+                     class="btn btn-sm btn-outline-primary">
+                    <i class="fas fa-download"></i> PDF
+                  </a>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+        <p class="text-muted text-center">📭 No invoices found.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

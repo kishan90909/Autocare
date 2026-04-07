@@ -1,0 +1,1165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Workshop Notifications - AutoCare</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdn.datatables.net/1.11.5/css/dataTables.bootstrap5.min.css" rel="stylesheet">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.11.5/js/dataTables.bootstrap5.min.js"></script>
+    <style>
+        .notification-card {
+            transition: transform 0.2s;
+            border: none;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .notification-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+        .notification-item {
+            border-left: 4px solid #007bff;
+            padding: 15px;
+            margin-bottom: 15px;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+        }
+        .notification-item.unread {
+            border-left-color: #dc3545;
+            background-color: #fff5f5;
+        }
+        .notification-item.info {
+            border-left-color: #17a2b8;
+            background-color: #f8f9fa;
+        }
+        .notification-item.success {
+            border-left-color: #28a745;
+            background-color: #f8fff8;
+        }
+        .notification-item.warning {
+            border-left-color: #ffc107;
+            background-color: #fffef5;
+        }
+        .notification-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 15px;
+        }
+        .booking-icon { background-color: #007bff; color: white; }
+        .payment-icon { background-color: #28a745; color: white; }
+        .system-icon { background-color: #6c757d; color: white; }
+        .reminder-icon { background-color: #ffc107; color: black; }
+        .stats-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .filter-section {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .notification-badge {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background-color: #dc3545;
+            color: white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8em;
+            font-weight: bold;
+        }
+        .quick-actions {
+            position: sticky;
+            top: 20px;
+        }
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        .real-time-indicator {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background-color: #28a745;
+            animation: pulse 2s infinite;
+        }
+        .notification-alert {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+            min-width: 300px;
+        }
+        .live-update {
+            position: relative;
+        }
+        .live-update::after {
+            content: '';
+            position: absolute;
+            top: -2px;
+            right: -2px;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: #28a745;
+            animation: pulse 2s infinite;
+        }
+        .automated-reminder {
+            background-color: #e3f2fd;
+            border-left: 4px solid #2196f3;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+        }
+        .smart-alert {
+            background-color: #fff3e0;
+            border-left: 4px solid #ff9800;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+        }
+        .notification-schedule {
+            background-color: #f3e5f5;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+        .schedule-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid #e1bee7;
+        }
+        .schedule-item:last-child {
+            border-bottom: none;
+        }
+        .schedule-toggle {
+            width: 40px;
+            height: 20px;
+            background-color: #ccc;
+            border-radius: 10px;
+            position: relative;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .schedule-toggle.active {
+            background-color: #4caf50;
+        }
+        .schedule-toggle::after {
+            content: '';
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            width: 16px;
+            height: 16px;
+            background-color: white;
+            border-radius: 50%;
+            transition: transform 0.3s;
+        }
+        .schedule-toggle.active::after {
+            transform: translateX(20px);
+        }
+        .priority-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 8px;
+        }
+        .priority-high { background-color: #f44336; }
+        .priority-medium { background-color: #ff9800; }
+        .priority-low { background-color: #4caf50; }
+        .notification-analytics {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+        .analytics-metric {
+            text-align: center;
+            padding: 10px;
+        }
+        .analytics-value {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #007bff;
+        }
+        .analytics-label {
+            font-size: 0.9em;
+            color: #6c757d;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="#"><i class="fas fa-tools"></i> Workshop Dashboard</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/workshop/dashboard"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/workshop/bookings"><i class="fas fa-calendar-check"></i> Bookings</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/workshop/services"><i class="fas fa-wrench"></i> Services</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="#"><i class="fas fa-bell"></i> Notifications</a>
+                    </li>
+                </ul>
+                <ul class="navbar-nav">
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-user"></i> Workshop Manager
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="#"><i class="fas fa-cog"></i> Settings</a></li>
+                            <li><a class="dropdown-item" href="#"><i class="fas fa-chart-line"></i> Performance</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="/logout"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid mt-4">
+        <!-- Real-time Notifications -->
+        <div id="liveNotifications" class="notification-alert"></div>
+
+        <!-- Page Header -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h2><i class="fas fa-bell live-update"></i> Workshop Notifications</h2>
+                        <p class="text-muted">Stay updated with booking alerts, reminders, and system notifications</p>
+                    </div>
+                    <div class="real-time-indicator" title="Real-time updates active"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Statistics Cards -->
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div class="card notification-card stats-card">
+                    <div class="card-body text-center">
+                        <i class="fas fa-bell fa-2x mb-2"></i>
+                        <h3 class="card-title">{{ unread_count }}</h3>
+                        <p class="card-text">Unread Notifications</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card notification-card">
+                    <div class="card-body text-center">
+                        <i class="fas fa-calendar-check fa-2x text-primary mb-2"></i>
+                        <h3 class="card-title">{{ today_bookings }}</h3>
+                        <p class="card-text">Today's Bookings</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card notification-card">
+                    <div class="card-body text-center">
+                        <i class="fas fa-clock fa-2x text-warning mb-2"></i>
+                        <h3 class="card-title">{{ pending_bookings }}</h3>
+                        <p class="card-text">Pending Bookings</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card notification-card">
+                    <div class="card-body text-center">
+                        <i class="fas fa-exclamation-triangle fa-2x text-danger mb-2"></i>
+                        <h3 class="card-title">{{ urgent_count }}</h3>
+                        <p class="card-text">Urgent Alerts</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Automated Notification Features -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card notification-card">
+                    <div class="card-header">
+                        <h5><i class="fas fa-robot"></i> Automated Notification System</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="automated-reminder">
+                                    <h6><i class="fas fa-clock"></i> Scheduled Reminders</h6>
+                                    <p class="mb-2">Automatic reminders sent to customers before appointments</p>
+                                    <div class="notification-schedule">
+                                        <div class="schedule-item">
+                                            <span>24 hours before</span>
+                                            <div class="schedule-toggle active" onclick="toggleSchedule('24h')"></div>
+                                        </div>
+                                        <div class="schedule-item">
+                                            <span>2 hours before</span>
+                                            <div class="schedule-toggle active" onclick="toggleSchedule('2h')"></div>
+                                        </div>
+                                        <div class="schedule-item">
+                                            <span>1 hour before</span>
+                                            <div class="schedule-toggle" onclick="toggleSchedule('1h')"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="smart-alert">
+                                    <h6><i class="fas fa-brain"></i> Smart Alerts</h6>
+                                    <p class="mb-2">AI-powered notifications based on customer behavior</p>
+                                    <div class="notification-schedule">
+                                        <div class="schedule-item">
+                                            <span>No-show alerts</span>
+                                            <div class="schedule-toggle active" onclick="toggleSmartAlert('no-show')"></div>
+                                        </div>
+                                        <div class="schedule-item">
+                                            <span>Follow-up reminders</span>
+                                            <div class="schedule-toggle active" onclick="toggleSmartAlert('follow-up')"></div>
+                                        </div>
+                                        <div class="schedule-item">
+                                            <span>Service recommendations</span>
+                                            <div class="schedule-toggle" onclick="toggleSmartAlert('recommendations')"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="notification-analytics">
+                                    <h6><i class="fas fa-chart-bar"></i> Notification Analytics</h6>
+                                    <div class="row">
+                                        <div class="col-6">
+                                            <div class="analytics-metric">
+                                                <div class="analytics-value">{{ notification_stats.sent_today }}</div>
+                                                <div class="analytics-label">Sent Today</div>
+                                            </div>
+                                        </div>
+                                        <div class="col-6">
+                                            <div class="analytics-metric">
+                                                <div class="analytics-value">{{ notification_stats.opened_rate }}%</div>
+                                                <div class="analytics-label">Open Rate</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-6">
+                                            <div class="analytics-metric">
+                                                <div class="analytics-value">{{ notification_stats.response_rate }}%</div>
+                                                <div class="analytics-label">Response Rate</div>
+                                            </div>
+                                        </div>
+                                        <div class="col-6">
+                                            <div class="analytics-metric">
+                                                <div class="analytics-value">{{ notification_stats.automated_count }}</div>
+                                                <div class="analytics-label">Automated</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <!-- Quick Actions -->
+            <div class="col-md-3">
+                <div class="card notification-card quick-actions">
+                    <div class="card-header">
+                        <h5><i class="fas fa-bolt"></i> Quick Actions</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-grid gap-2">
+                            <button class="btn btn-primary" onclick="markAllAsRead()">
+                                <i class="fas fa-check-double"></i> Mark All Read
+                            </button>
+                            <button class="btn btn-outline-danger" onclick="clearAllNotifications()">
+                                <i class="fas fa-trash"></i> Clear All
+                            </button>
+                            <hr>
+                            <button class="btn btn-outline-info" onclick="refreshNotifications()">
+                                <i class="fas fa-sync-alt"></i> Refresh
+                            </button>
+                            <button class="btn btn-outline-success" onclick="exportNotifications()">
+                                <i class="fas fa-download"></i> Export
+                            </button>
+                        </div>
+
+                        <hr>
+
+                        <h6>Notification Settings</h6>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" id="emailNotifications" checked>
+                            <label class="form-check-label" for="emailNotifications">
+                                Email Notifications
+                            </label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" id="smsNotifications" checked>
+                            <label class="form-check-label" for="smsNotifications">
+                                SMS Notifications
+                            </label>
+                        </div>
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="checkbox" id="pushNotifications" checked>
+                            <label class="form-check-label" for="pushNotifications">
+                                Push Notifications
+                            </label>
+                        </div>
+                        <button class="btn btn-sm btn-primary w-100 mt-2" onclick="saveNotificationSettings()">
+                            Save Settings
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Notifications List -->
+            <div class="col-md-9">
+                <!-- Filters -->
+                <div class="filter-section">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <select class="form-select" id="notificationType" onchange="filterNotifications()">
+                                <option value="all">All Types</option>
+                                <option value="booking">Bookings</option>
+                                <option value="payment">Payments</option>
+                                <option value="system">System</option>
+                                <option value="reminder">Reminders</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <select class="form-select" id="notificationStatus" onchange="filterNotifications()">
+                                <option value="all">All Status</option>
+                                <option value="unread">Unread</option>
+                                <option value="read">Read</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <select class="form-select" id="timeFilter" onchange="filterNotifications()">
+                                <option value="all">All Time</option>
+                                <option value="today">Today</option>
+                                <option value="week">This Week</option>
+                                <option value="month">This Month</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="input-group">
+                                <input type="text" class="form-control" id="searchNotifications" placeholder="Search...">
+                                <button class="btn btn-outline-secondary" onclick="searchNotifications()">
+                                    <i class="fas fa-search"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Notifications -->
+                <div class="card notification-card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5><i class="fas fa-list"></i> Notifications</h5>
+                        <div class="btn-group btn-group-sm">
+                            <button class="btn btn-outline-primary active" onclick="showAllNotifications()">All</button>
+                            <button class="btn btn-outline-danger" onclick="showUnreadOnly()">Unread</button>
+                            <button class="btn btn-outline-warning" onclick="showUrgentOnly()">Urgent</button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        {% for notification in notifications %}
+                        <div class="notification-item {{ notification.status }} {{ notification.type }}"
+                             data-type="{{ notification.type }}"
+                             data-status="{{ notification.status }}"
+                             data-date="{{ notification.created_at.strftime('%Y-%m-%d') }}">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div class="d-flex align-items-start flex-grow-1">
+                                    <div class="notification-icon
+                                        {% if notification.type == 'booking' %}booking-icon
+                                        {% elif notification.type == 'payment' %}payment-icon
+                                        {% elif notification.type == 'system' %}system-icon
+                                        {% else %}reminder-icon{% endif %}">
+                                        <i class="fas
+                                            {% if notification.type == 'booking' %}fa-calendar-check
+                                            {% elif notification.type == 'payment' %}fa-credit-card
+                                            {% elif notification.type == 'system' %}fa-cog
+                                            {% else %}fa-clock{% endif %}">
+                                        </i>
+                                    </div>
+                                    <div class="flex-grow-1">
+                                        <div class="d-flex justify-content-between align-items-start">
+                                            <div>
+                                                <h6 class="mb-1">{{ notification.title }}</h6>
+                                                <p class="mb-1">{{ notification.message }}</p>
+                                                {% if notification.details %}
+                                                <small class="text-muted">{{ notification.details }}</small>
+                                                {% endif %}
+                                            </div>
+                                            {% if notification.status == 'unread' %}
+                                            <span class="notification-badge">!</span>
+                                            {% endif %}
+                                        </div>
+                                        <div class="d-flex justify-content-between align-items-center mt-2">
+                                            <small class="text-muted">
+                                                <i class="fas fa-clock"></i> {{ notification.created_at.strftime('%d %b %Y, %H:%M') }}
+                                                {% if notification.priority == 'high' %}
+                                                <span class="badge bg-danger ms-2">High Priority</span>
+                                                {% endif %}
+                                            </small>
+                                            <div class="btn-group btn-group-sm">
+                                                {% if notification.status == 'unread' %}
+                                                <button class="btn btn-sm btn-outline-primary"
+                                                        onclick="markAsRead('{{ notification.id }}')"
+                                                        title="Mark as Read">
+                                                    <i class="fas fa-check"></i>
+                                                </button>
+                                                {% endif %}
+                                                <button class="btn btn-sm btn-outline-info"
+                                                        onclick="viewNotification('{{ notification.id }}')"
+                                                        title="View Details">
+                                                    <i class="fas fa-eye"></i>
+                                                </button>
+                                                {% if notification.action_url %}
+                                                <button class="btn btn-sm btn-outline-success"
+                                                        onclick="takeAction('{{ notification.action_url }}')"
+                                                        title="Take Action">
+                                                    <i class="fas fa-external-link-alt"></i>
+                                                </button>
+                                                {% endif %}
+                                                <button class="btn btn-sm btn-outline-danger"
+                                                        onclick="deleteNotification('{{ notification.id }}')"
+                                                        title="Delete">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+
+                        {% if notifications|length == 0 %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-bell-slash fa-3x text-muted mb-3"></i>
+                            <h5 class="text-muted">No notifications</h5>
+                            <p class="text-muted">You're all caught up! New notifications will appear here.</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Recent Activity Summary -->
+                <div class="card notification-card mt-4">
+                    <div class="card-header">
+                        <h5><i class="fas fa-chart-line"></i> Notification Summary</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6>Today's Activity</h6>
+                                <div class="mb-2">
+                                    <span class="text-muted">New bookings:</span>
+                                    <strong>{{ today_stats.new_bookings }}</strong>
+                                </div>
+                                <div class="mb-2">
+                                    <span class="text-muted">Completed services:</span>
+                                    <strong>{{ today_stats.completed_services }}</strong>
+                                </div>
+                                <div class="mb-2">
+                                    <span class="text-muted">Customer messages:</span>
+                                    <strong>{{ today_stats.customer_messages }}</strong>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <h6>System Health</h6>
+                                <div class="mb-2">
+                                    <span class="text-muted">System uptime:</span>
+                                    <strong>{{ system_stats.uptime }}</strong>
+                                </div>
+                                <div class="mb-2">
+                                    <span class="text-muted">Active connections:</span>
+                                    <strong>{{ system_stats.active_connections }}</strong>
+                                </div>
+                                <div class="mb-2">
+                                    <span class="text-muted">Last backup:</span>
+                                    <strong>{{ system_stats.last_backup }}</strong>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize DataTable and Real-time Updates
+        $(document).ready(function() {
+            // Auto-refresh notifications every 30 seconds
+            setInterval(refreshNotifications, 30000);
+
+            // Initialize real-time notifications
+            initializeRealTimeNotifications();
+
+            // Add notification sound (optional)
+            playNotificationSound();
+        });
+
+        // Real-time notification system
+        function initializeRealTimeNotifications() {
+            // Simulate WebSocket connection for real-time updates
+            setInterval(checkForNewNotifications, 10000); // Check every 10 seconds
+
+            // Add live update indicator
+            const indicator = document.createElement('div');
+            indicator.className = 'real-time-indicator';
+            indicator.title = 'Real-time updates active';
+            document.querySelector('.container-fluid').appendChild(indicator);
+        }
+
+        function checkForNewNotifications() {
+            fetch('/workshop/api/new-notifications')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.new_notifications && data.new_notifications.length > 0) {
+                        data.new_notifications.forEach(notification => {
+                            showLiveNotification(notification);
+                        });
+                    }
+                })
+                .catch(error => {
+                    console.log('Error checking for new notifications:', error);
+                });
+        }
+
+        function showLiveNotification(notification) {
+            // Create live notification popup
+            const liveNotification = document.createElement('div');
+            liveNotification.className = 'alert alert-' +
+                (notification.type === 'urgent' ? 'danger' :
+                 notification.type === 'booking' ? 'primary' :
+                 notification.type === 'payment' ? 'success' : 'info') +
+                ' alert-dismissible fade show';
+            liveNotification.innerHTML = `
+                <strong>${notification.title}</strong> ${notification.message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+
+            document.getElementById('liveNotifications').appendChild(liveNotification);
+
+            // Play notification sound
+            playNotificationSound();
+
+            // Auto-dismiss after 8 seconds
+            setTimeout(() => {
+                if (liveNotification.parentNode) {
+                    liveNotification.remove();
+                }
+            }, 8000);
+        }
+
+        function playNotificationSound() {
+            // Create audio context for notification sound
+            try {
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+
+                oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
+                oscillator.frequency.setValueAtTime(600, audioContext.currentTime + 0.1);
+
+                gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.2);
+
+                oscillator.start(audioContext.currentTime);
+                oscillator.stop(audioContext.currentTime + 0.2);
+            } catch (error) {
+                console.log('Audio notification not supported');
+            }
+        }
+
+        function markAllAsRead() {
+            if (confirm('Mark all notifications as read?')) {
+                fetch('/workshop/mark-all-notifications-read', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        location.reload();
+                    } else {
+                        alert('Failed to mark notifications as read');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('An error occurred while processing the request');
+                });
+            }
+        }
+
+        function clearAllNotifications() {
+            if (confirm('Delete all notifications? This action cannot be undone.')) {
+                fetch('/workshop/clear-all-notifications', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        location.reload();
+                    } else {
+                        alert('Failed to clear notifications');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('An error occurred while processing the request');
+                });
+            }
+        }
+
+        function markAsRead(notificationId) {
+            fetch('/workshop/mark-notification-read/' + notificationId, {
+                method: 'POST'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    location.reload();
+                } else {
+                    alert('Failed to mark notification as read');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred while processing the request');
+            });
+        }
+
+        function deleteNotification(notificationId) {
+            if (confirm('Delete this notification?')) {
+                fetch('/workshop/delete-notification/' + notificationId, {
+                    method: 'POST'
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        location.reload();
+                    } else {
+                        alert('Failed to delete notification');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('An error occurred while processing the request');
+                });
+            }
+        }
+
+        function viewNotification(notificationId) {
+            // Open notification details modal or redirect to relevant page
+            window.location.href = '/workshop/notification/' + notificationId;
+        }
+
+        function takeAction(actionUrl) {
+            window.location.href = actionUrl;
+        }
+
+        function refreshNotifications() {
+            location.reload();
+        }
+
+        function filterNotifications() {
+            const type = document.getElementById('notificationType').value;
+            const status = document.getElementById('notificationStatus').value;
+            const time = document.getElementById('timeFilter').value;
+
+            document.querySelectorAll('.notification-item').forEach(item => {
+                const itemType = item.dataset.type;
+                const itemStatus = item.dataset.status;
+                const itemDate = item.dataset.date;
+
+                let show = true;
+
+                if (type !== 'all' && itemType !== type) show = false;
+                if (status !== 'all' && itemStatus !== status) show = false;
+                if (time !== 'all') {
+                    const today = new Date().toISOString().split('T')[0];
+                    const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+                    const monthAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+
+                    if (time === 'today' && itemDate !== today) show = false;
+                    if (time === 'week' && itemDate < weekAgo) show = false;
+                    if (time === 'month' && itemDate < monthAgo) show = false;
+                }
+
+                item.style.display = show ? 'block' : 'none';
+            });
+        }
+
+        function searchNotifications() {
+            const searchTerm = document.getElementById('searchNotifications').value.toLowerCase();
+
+            document.querySelectorAll('.notification-item').forEach(item => {
+                const title = item.querySelector('h6').textContent.toLowerCase();
+                const message = item.querySelector('p').textContent.toLowerCase();
+
+                const matches = title.includes(searchTerm) || message.includes(searchTerm);
+                item.style.display = matches ? 'block' : 'none';
+            });
+        }
+
+        function showAllNotifications() {
+            document.querySelectorAll('.notification-item').forEach(item => {
+                item.style.display = 'block';
+            });
+        }
+
+        function showUnreadOnly() {
+            document.querySelectorAll('.notification-item').forEach(item => {
+                item.style.display = item.classList.contains('unread') ? 'block' : 'none';
+            });
+        }
+
+        function showUrgentOnly() {
+            document.querySelectorAll('.notification-item').forEach(item => {
+                const hasUrgentBadge = item.querySelector('.badge.bg-danger');
+                item.style.display = hasUrgentBadge ? 'block' : 'none';
+            });
+        }
+
+        function saveNotificationSettings() {
+            const emailEnabled = document.getElementById('emailNotifications').checked;
+            const smsEnabled = document.getElementById('smsNotifications').checked;
+            const pushEnabled = document.getElementById('pushNotifications').checked;
+
+            fetch('/workshop/save-notification-settings', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    email_notifications: emailEnabled,
+                    sms_notifications: smsEnabled,
+                    push_notifications: pushEnabled
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Notification settings saved successfully!');
+                } else {
+                    alert('Failed to save notification settings');
+                }
+            });
+        }
+
+        function exportNotifications() {
+            window.location.href = '/workshop/export-notifications';
+        }
+
+        // Automated Notification Functions
+        function toggleSchedule(scheduleType) {
+            const toggle = event.target;
+            const isActive = toggle.classList.contains('active');
+
+            fetch('/workshop/toggle-notification-schedule', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    schedule_type: scheduleType,
+                    enabled: !isActive
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    toggle.classList.toggle('active');
+                    showLiveNotification({
+                        type: 'success',
+                        title: 'Schedule Updated',
+                        message: `${scheduleType} reminders ${!isActive ? 'enabled' : 'disabled'}`
+                    });
+                } else {
+                    alert('Failed to update schedule: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred while updating the schedule');
+            });
+        }
+
+        function toggleSmartAlert(alertType) {
+            const toggle = event.target;
+            const isActive = toggle.classList.contains('active');
+
+            fetch('/workshop/toggle-smart-alert', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    alert_type: alertType,
+                    enabled: !isActive
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    toggle.classList.toggle('active');
+                    showLiveNotification({
+                        type: 'info',
+                        title: 'Smart Alert Updated',
+                        message: `${alertType} alerts ${!isActive ? 'enabled' : 'disabled'}`
+                    });
+                } else {
+                    alert('Failed to update smart alert: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred while updating the smart alert');
+            });
+        }
+
+        // Enhanced notification system with priority indicators
+        function showPriorityNotification(notification) {
+            const priorityColors = {
+                'high': 'priority-high',
+                'medium': 'priority-medium',
+                'low': 'priority-low'
+            };
+
+            const liveNotification = document.createElement('div');
+            liveNotification.className = 'alert alert-' +
+                (notification.type === 'urgent' ? 'danger' :
+                 notification.type === 'booking' ? 'primary' :
+                 notification.type === 'payment' ? 'success' : 'info') +
+                ' alert-dismissible fade show';
+            liveNotification.innerHTML = `
+                <div class="d-flex align-items-center">
+                    <span class="priority-indicator ${priorityColors[notification.priority] || 'priority-low'}"></span>
+                    <div>
+                        <strong>${notification.title}</strong> ${notification.message}
+                    </div>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+
+            document.getElementById('liveNotifications').appendChild(liveNotification);
+
+            // Play priority-based sound
+            playPrioritySound(notification.priority);
+
+            // Auto-dismiss based on priority
+            const dismissTime = notification.priority === 'high' ? 12000 : 8000;
+            setTimeout(() => {
+                if (liveNotification.parentNode) {
+                    liveNotification.remove();
+                }
+            }, dismissTime);
+        }
+
+        function playPrioritySound(priority) {
+            try {
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+
+                // Different frequencies for different priorities
+                const frequencies = {
+                    'high': [1000, 1200, 1000],
+                    'medium': [800, 1000],
+                    'low': [600]
+                };
+
+                const freqs = frequencies[priority] || frequencies.low;
+                let startTime = audioContext.currentTime;
+
+                freqs.forEach((freq, index) => {
+                    oscillator.frequency.setValueAtTime(freq, startTime + index * 0.2);
+                });
+
+                gainNode.gain.setValueAtTime(0.1, startTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, startTime + 0.6);
+
+                oscillator.start(startTime);
+                oscillator.stop(startTime + 0.6);
+            } catch (error) {
+                console.log('Audio notification not supported');
+            }
+        }
+
+        // Automated reminder system
+        function scheduleAutomatedReminders() {
+            // This would be called by the backend system
+            fetch('/workshop/api/upcoming-appointments')
+                .then(response => response.json())
+                .then(appointments => {
+                    appointments.forEach(appointment => {
+                        scheduleReminder(appointment, '24h');
+                        scheduleReminder(appointment, '2h');
+                    });
+                });
+        }
+
+        function scheduleReminder(appointment, timeFrame) {
+            const reminderTime = calculateReminderTime(appointment.appointment_time, timeFrame);
+
+            if (reminderTime > new Date()) {
+                setTimeout(() => {
+                    sendAutomatedReminder(appointment, timeFrame);
+                }, reminderTime - new Date());
+            }
+        }
+
+        function calculateReminderTime(appointmentTime, timeFrame) {
+            const time = new Date(appointmentTime);
+            switch(timeFrame) {
+                case '24h': return new Date(time.getTime() - 24 * 60 * 60 * 1000);
+                case '2h': return new Date(time.getTime() - 2 * 60 * 60 * 1000);
+                case '1h': return new Date(time.getTime() - 1 * 60 * 60 * 1000);
+                default: return time;
+            }
+        }
+
+        function sendAutomatedReminder(appointment, timeFrame) {
+            fetch('/workshop/send-automated-reminder', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    appointment_id: appointment.id,
+                    customer_id: appointment.customer_id,
+                    reminder_type: timeFrame,
+                    message: generateReminderMessage(appointment, timeFrame)
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    console.log('Automated reminder sent successfully');
+                }
+            });
+        }
+
+        function generateReminderMessage(appointment, timeFrame) {
+            const messages = {
+                '24h': `Reminder: You have an appointment scheduled for tomorrow at ${appointment.time} with ${appointment.workshop_name}.`,
+                '2h': `Reminder: Your appointment is in 2 hours at ${appointment.workshop_name}.`,
+                '1h': `Reminder: Your appointment starts in 1 hour at ${appointment.workshop_name}.`
+            };
+            return messages[timeFrame] || 'Appointment reminder';
+        }
+
+        // Smart alert system
+        function triggerSmartAlerts() {
+            checkForNoShows();
+            checkForFollowUps();
+            generateServiceRecommendations();
+        }
+
+        function checkForNoShows() {
+            fetch('/workshop/api/no-show-customers')
+                .then(response => response.json())
+                .then(customers => {
+                    customers.forEach(customer => {
+                        showPriorityNotification({
+                            type: 'urgent',
+                            priority: 'high',
+                            title: 'No-Show Alert',
+                            message: `${customer.name} missed their appointment. Consider sending a follow-up.`
+                        });
+                    });
+                });
+        }
+
+        function checkForFollowUps() {
+            fetch('/workshop/api/customers-for-followup')
+                .then(response => response.json())
+                .then(customers => {
+                    customers.forEach(customer => {
+                        showPriorityNotification({
+                            type: 'info',
+                            priority: 'medium',
+                            title: 'Follow-up Reminder',
+                            message: `${customer.name} is due for a follow-up visit.`
+                        });
+                    });
+                });
+        }
+
+        function generateServiceRecommendations() {
+            fetch('/workshop/api/service-recommendations')
+                .then(response => response.json())
+                .then(recommendations => {
+                    recommendations.forEach(rec => {
+                        showPriorityNotification({
+                            type: 'info',
+                            priority: 'low',
+                            title: 'Service Recommendation',
+                            message: `${rec.customer_name} might be interested in ${rec.service_name}.`
+                        });
+                    });
+                });
+        }
+
+        // Initialize automated systems
+        document.addEventListener('DOMContentLoaded', function() {
+            // Start automated systems
+            setInterval(triggerSmartAlerts, 300000); // Check every 5 minutes
+            setInterval(scheduleAutomatedReminders, 3600000); // Schedule reminders every hour
+        });
+    </script>
+</body>
+</html>

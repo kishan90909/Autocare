@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Welcome, {{ session.username }}!</h2>
+    <a href="{{ url_for('book_service') }}" class="btn btn-primary btn-lg">
+        <i class="fas fa-plus-circle"></i> Book a New Service
+    </a>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-header bg-dark text-white">
+        <h4 class="mb-0">My Booking History</h4>
+    </div>
+    <div class="card-body">
+        {% if bookings %}
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead>
+                    <tr>
+                        <th>Booking ID</th>
+                        <th>Services</th>
+                        <th>Total Cost</th>
+                        <th>Status</th>
+                        <th>Assigned Worker</th>
+                        <th>Date</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for booking in bookings %}
+                    <tr>
+                        <td>{{ booking.id }}</td>
+                        <td>{{ booking.services }}</td>
+                        <td>₹ {{ "%.2f"|format(booking.total_cost) }}</td>
+                        <td>
+                            <span class="badge 
+                                {% if booking.status == 'pending' %}bg-warning text-dark
+                                {% elif booking.status == 'accepted' %}bg-info
+                                {% elif booking.status == 'completed' %}bg-success
+                                {% elif booking.status == 'rejected' %}bg-danger
+                                {% endif %}">
+                                {{ booking.status|capitalize }}
+                            </span>
+                        </td>
+                        <td>{{ booking.worker_name or "Pending" }}</td>
+                        <td>{{ booking.created_at.strftime('%Y-%m-%d') }}</td>
+                        <td class="d-flex flex-wrap gap-2">
+                            <!-- Track Booking -->
+                            <a href="{{ url_for('booking_detail', booking_id=booking.id) }}" class="btn btn-sm btn-outline-primary">
+                                🚗 Track
+                            </a>
+
+                            <!-- Download Invoice -->
+                            {% if booking.status == 'completed' and booking.invoice_id %}
+                                <a href="{{ url_for('download_invoice', invoice_id=booking.invoice_id) }}" class="btn btn-sm btn-outline-secondary">
+                                    🧾 Invoice
+                                </a>
+                            {% else %}
+                                <span class="text-muted small">Invoice N/A</span>
+                            {% endif %}
+
+                            <!-- Cancel Booking -->
+                            {% if booking.status == 'pending' %}
+                                <form method="post" action="{{ url_for('cancel_booking', booking_id=booking.id) }}" 
+                                      onsubmit="return confirm('Are you sure you want to cancel this booking?');" 
+                                      style="display:inline;">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger">❌ Cancel</button>
+                                </form>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p class="text-center text-muted">You have no bookings yet. Book your first service to get started!</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

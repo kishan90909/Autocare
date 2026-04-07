@@ -1,0 +1,360 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Admin Dashboard - AutoCare Comprehensive System</title>
+
+  <!-- Bootstrap CSS (CDN) -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+  <!-- Font Awesome for Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Your custom CSS -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+
+  <!-- jQuery (CDN) -->
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+  <!-- Bootstrap JS (CDN) -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</head>
+<body>
+  <!-- Navbar -->
+  <nav class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top">
+    <div class="container">
+      <a class="navbar-brand" href="{{ url_for('index') }}">
+        <i class="fas fa-car me-2"></i>AutoCare
+      </a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#nav" aria-controls="nav" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="nav">
+        <ul class="navbar-nav me-auto">
+          <li class="nav-item">
+            <a class="nav-link" href="{{ url_for('index') }}">
+              <i class="fas fa-home me-1"></i>Home
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="{{ url_for('about') }}">
+              <i class="fas fa-info-circle me-1"></i>About
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="{{ url_for('locate_garages') }}">
+              <i class="fas fa-map-marker-alt me-1"></i>Find Garages
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="{{ url_for('contact') }}">
+              <i class="fas fa-phone me-1"></i>Contact
+            </a>
+          </li>
+        </ul>
+        <ul class="navbar-nav ms-auto">
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" href="#" id="adminDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+              <i class="fas fa-crown me-1"></i>{{ session.get('username') }}
+            </a>
+            <ul class="dropdown-menu" aria-labelledby="adminDropdown">
+              <li><a class="dropdown-item active" href="{{ url_for('admin_dashboard') }}">
+                <i class="fas fa-tachometer-alt me-2"></i>Dashboard
+              </a></li>
+              <li><a class="dropdown-item" href="{{ url_for('admin_workshops') }}">
+                <i class="fas fa-tools me-2"></i>Workshops
+              </a></li>
+              <li><a class="dropdown-item" href="{{ url_for('admin_bookings') }}">
+                <i class="fas fa-list me-2"></i>Bookings
+              </a></li>
+              <li><a class="dropdown-item" href="{{ url_for('admin_complaints') }}">
+                <i class="fas fa-exclamation-triangle me-2"></i>Complaints
+              </a></li>
+              <li><a class="dropdown-item" href="{{ url_for('admin_analytics') }}">
+                <i class="fas fa-chart-bar me-2"></i>Analytics
+              </a></li>
+              <li><hr class="dropdown-divider"></li>
+              <li><a class="dropdown-item" href="{{ url_for('logout') }}">
+                <i class="fas fa-sign-out-alt me-2"></i>Logout
+              </a></li>
+            </ul>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Flash Messages -->
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      {% for category, message in messages %}
+        <div class="alert alert-{{ 'success' if category == 'success' else 'danger' if category == 'error' else 'info' }} alert-dismissible fade show" role="alert">
+          {{ message }}
+          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+      {% endfor %}
+    {% endif %}
+  {% endwith %}
+
+  <!-- Admin Dashboard -->
+  <div class="container py-5">
+    <div class="row">
+      <div class="col-12">
+        <h1 class="mb-4">
+          <i class="fas fa-tachometer-alt text-primary me-2"></i>Admin Dashboard
+        </h1>
+        <p class="text-muted">Welcome back, {{ session.get('username') }}!</p>
+      </div>
+    </div>
+
+    <!-- Quick Stats -->
+    <div class="row g-4 mb-5">
+      <div class="col-md-3">
+        <div class="card text-center">
+          <div class="card-body">
+            <i class="fas fa-calendar-check fa-2x text-primary mb-2"></i>
+            <h4>{{ analytics.total_bookings }}</h4>
+            <p class="text-muted">Total Bookings</p>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="card text-center">
+          <div class="card-body">
+            <i class="fas fa-clock fa-2x text-warning mb-2"></i>
+            <h4>{{ analytics.pending_bookings }}</h4>
+            <p class="text-muted">Pending</p>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="card text-center">
+          <div class="card-body">
+            <i class="fas fa-check-circle fa-2x text-success mb-2"></i>
+            <h4>{{ analytics.completed_bookings }}</h4>
+            <p class="text-muted">Completed</p>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="card text-center">
+          <div class="card-body">
+            <i class="fas fa-tools fa-2x text-info mb-2"></i>
+            <h4>{{ analytics.workshop_count }}</h4>
+            <p class="text-muted">Active Workshops</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="row g-4 mb-5">
+      <div class="col-md-3">
+        <div class="card h-100">
+          <div class="card-body text-center">
+            <i class="fas fa-tools fa-3x text-primary mb-3"></i>
+            <h5 class="card-title">Manage Workshops</h5>
+            <p class="card-text">Approve and manage workshop registrations</p>
+            <a href="{{ url_for('admin_workshops') }}" class="btn btn-primary">Manage</a>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="card h-100">
+          <div class="card-body text-center">
+            <i class="fas fa-list fa-3x text-success mb-3"></i>
+            <h5 class="card-title">Manage Bookings</h5>
+            <p class="card-text">Assign workshops and track bookings</p>
+            <a href="{{ url_for('admin_bookings') }}" class="btn btn-success">Manage</a>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="card h-100">
+          <div class="card-body text-center">
+            <i class="fas fa-exclamation-triangle fa-3x text-warning mb-3"></i>
+            <h5 class="card-title">Handle Complaints</h5>
+            <p class="card-text">Review and respond to customer complaints</p>
+            <a href="{{ url_for('admin_complaints') }}" class="btn btn-warning">Handle</a>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="card h-100">
+          <div class="card-body text-center">
+            <i class="fas fa-chart-bar fa-3x text-info mb-3"></i>
+            <h5 class="card-title">View Analytics</h5>
+            <p class="card-text">Monitor system performance and metrics</p>
+            <a href="{{ url_for('admin_analytics') }}" class="btn btn-info">View</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Recent Activity -->
+    <div class="row g-4">
+      <!-- Pending Workshops -->
+      <div class="col-md-6">
+        <div class="card">
+          <div class="card-header">
+            <h5 class="mb-0">
+              <i class="fas fa-clock me-2"></i>Pending Workshop Approvals
+            </h5>
+          </div>
+          <div class="card-body">
+            {% if pending_workshops %}
+              <div class="list-group list-group-flush">
+                {% for workshop in pending_workshops[:3] %}
+                <div class="list-group-item d-flex justify-content-between align-items-center">
+                  <div>
+                    <h6 class="mb-1">{{ workshop.username }}</h6>
+                    <p class="mb-1 text-muted">{{ workshop.email }}</p>
+                    <small class="text-muted">{{ workshop.created_at.strftime('%Y-%m-%d') }}</small>
+                  </div>
+                  <a href="{{ url_for('approve_workshop', workshop_id=workshop.id) }}" class="btn btn-sm btn-success">
+                    <i class="fas fa-check me-1"></i>Approve
+                  </a>
+                </div>
+                {% endfor %}
+              </div>
+              <div class="text-center mt-3">
+                <a href="{{ url_for('admin_workshops') }}" class="btn btn-outline-primary">
+                  <i class="fas fa-list me-2"></i>View All Workshops
+                </a>
+              </div>
+            {% else %}
+              <div class="alert alert-success">
+                <i class="fas fa-check-circle me-2"></i>All workshops are approved!
+              </div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
+      <!-- Pending Complaints -->
+      <div class="col-md-6">
+        <div class="card">
+          <div class="card-header">
+            <h5 class="mb-0">
+              <i class="fas fa-exclamation-triangle me-2"></i>Pending Complaints
+            </h5>
+          </div>
+          <div class="card-body">
+            {% if pending_complaints %}
+              <div class="list-group list-group-flush">
+                {% for complaint in pending_complaints[:3] %}
+                <div class="list-group-item">
+                  <div class="d-flex w-100 justify-content-between">
+                    <h6 class="mb-1">{{ complaint.subject }}</h6>
+                    <small class="text-muted">{{ complaint.created_at.strftime('%Y-%m-%d') }}</small>
+                  </div>
+                  <p class="mb-1">{{ complaint.name }} - {{ complaint.email }}</p>
+                  <small>{{ complaint.message[:50] }}...</small>
+                </div>
+                {% endfor %}
+              </div>
+              <div class="text-center mt-3">
+                <a href="{{ url_for('admin_complaints') }}" class="btn btn-outline-warning">
+                  <i class="fas fa-list me-2"></i>View All Complaints
+                </a>
+              </div>
+            {% else %}
+              <div class="alert alert-success">
+                <i class="fas fa-check-circle me-2"></i>No pending complaints!
+              </div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
+      <!-- Recent Bookings -->
+      <div class="col-12">
+        <div class="card">
+          <div class="card-header">
+            <h5 class="mb-0">
+              <i class="fas fa-calendar-check me-2"></i>Recent Bookings
+            </h5>
+          </div>
+          <div class="card-body">
+            {% if recent_bookings %}
+              <div class="table-responsive">
+                <table class="table table-striped">
+                  <thead>
+                    <tr>
+                      <th>Booking ID</th>
+                      <th>Customer</th>
+                      <th>Services</th>
+                      <th>Total Cost</th>
+                      <th>Status</th>
+                      <th>Workshop</th>
+                      <th>Date</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for booking in recent_bookings %}
+                    <tr>
+                      <td>#{{ booking.id }}</td>
+                      <td>{{ booking.customer_name }}</td>
+                      <td>
+                        {% for service in booking.services %}
+                          <span class="badge bg-secondary">{{ service.name }}</span>
+                        {% endfor %}
+                      </td>
+                      <td>₹{{ "%.2f"|format(booking.total_cost) }}</td>
+                      <td>
+                        <span class="badge bg-{{ 'warning' if booking.status == 'pending' else 'info' if booking.status == 'assigned' else 'success' if booking.status == 'completed' else 'danger' }}">
+                          {{ booking.status|title }}
+                        </span>
+                      </td>
+                      <td>{{ booking.workshop_name or 'Not Assigned' }}</td>
+                      <td>{{ booking.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                      <td>
+                        {% if booking.status == 'pending' %}
+                          <button class="btn btn-sm btn-outline-primary" onclick="assignWorkshop({{ booking.id }})">
+                            <i class="fas fa-tools me-1"></i>Assign
+                          </button>
+                        {% endif %}
+                      </td>
+                    </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+              <div class="text-center mt-3">
+                <a href="{{ url_for('admin_bookings') }}" class="btn btn-outline-primary">
+                  <i class="fas fa-list me-2"></i>View All Bookings
+                </a>
+              </div>
+            {% else %}
+              <div class="alert alert-info">
+                <i class="fas fa-info-circle me-2"></i>No bookings yet.
+              </div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="bg-dark text-light py-4 mt-5">
+    <div class="container text-center">
+      <p>&copy; {{ datetime.utcnow().year }} AutoCare Comprehensive System. All rights reserved.</p>
+    </div>
+  </footer>
+
+  <script>
+    function assignWorkshop(bookingId) {
+      window.location.href = `/admin/assign_workshop/${bookingId}`;
+    }
+  </script>
+
+  <!-- Custom JS -->
+  <script src="{{ url_for('static', filename='js/script_fixed.js') }}"></script>
+</body>
+</html>

@@ -1,0 +1,367 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Manage Complaints - AutoCare Comprehensive System</title>
+
+  <!-- Bootstrap CSS (CDN) -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+  <!-- Font Awesome for Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Your custom CSS -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+
+  <!-- jQuery (CDN) -->
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+  <!-- Bootstrap JS (CDN) -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</head>
+<body>
+  <!-- Navbar -->
+  <nav class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top">
+    <div class="container">
+      <a class="navbar-brand" href="{{ url_for('index') }}">
+        <i class="fas fa-car me-2"></i>AutoCare
+      </a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#nav" aria-controls="nav" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="nav">
+        <ul class="navbar-nav me-auto">
+          <li class="nav-item">
+            <a class="nav-link" href="{{ url_for('index') }}">
+              <i class="fas fa-home me-1"></i>Home
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="{{ url_for('about') }}">
+              <i class="fas fa-info-circle me-1"></i>About
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="{{ url_for('locate_garages') }}">
+              <i class="fas fa-map-marker-alt me-1"></i>Find Garages
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="{{ url_for('contact') }}">
+              <i class="fas fa-phone me-1"></i>Contact
+            </a>
+          </li>
+        </ul>
+        <ul class="navbar-nav ms-auto">
+          <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" href="#" id="adminDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+              <i class="fas fa-crown me-1"></i>{{ session.get('username') }}
+            </a>
+            <ul class="dropdown-menu" aria-labelledby="adminDropdown">
+              <li><a class="dropdown-item" href="{{ url_for('admin_dashboard') }}">
+                <i class="fas fa-tachometer-alt me-2"></i>Dashboard
+              </a></li>
+              <li><a class="dropdown-item" href="{{ url_for('admin_workshops') }}">
+                <i class="fas fa-tools me-2"></i>Workshops
+              </a></li>
+              <li><a class="dropdown-item" href="{{ url_for('admin_bookings') }}">
+                <i class="fas fa-list me-2"></i>Bookings
+              </a></li>
+              <li><a class="dropdown-item active" href="{{ url_for('admin_complaints') }}">
+                <i class="fas fa-exclamation-triangle me-2"></i>Complaints
+              </a></li>
+              <li><a class="dropdown-item" href="{{ url_for('admin_analytics') }}">
+                <i class="fas fa-chart-bar me-2"></i>Analytics
+              </a></li>
+              <li><hr class="dropdown-divider"></li>
+              <li><a class="dropdown-item" href="{{ url_for('logout') }}">
+                <i class="fas fa-sign-out-alt me-2"></i>Logout
+              </a></li>
+            </ul>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Flash Messages -->
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      {% for category, message in messages %}
+        <div class="alert alert-{{ 'success' if category == 'success' else 'danger' if category == 'error' else 'info' }} alert-dismissible fade show" role="alert">
+          {{ message }}
+          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+      {% endfor %}
+    {% endif %}
+  {% endwith %}
+
+  <!-- Admin Complaints -->
+  <div class="container py-5">
+    <div class="row">
+      <div class="col-12">
+        <h1 class="mb-4">
+          <i class="fas fa-exclamation-triangle text-primary me-2"></i>Manage Complaints
+        </h1>
+        <p class="text-muted">Review and respond to customer complaints</p>
+      </div>
+    </div>
+
+    <!-- Quick Stats -->
+    <div class="row g-4 mb-5">
+      <div class="col-md-3">
+        <div class="card text-center">
+          <div class="card-body">
+            <i class="fas fa-exclamation-triangle fa-2x text-primary mb-2"></i>
+            <h4>{{ complaints|length }}</h4>
+            <p class="text-muted">Total Complaints</p>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="card text-center">
+          <div class="card-body">
+            <i class="fas fa-clock fa-2x text-warning mb-2"></i>
+            <h4>{{ complaints|selectattr('status', 'equalto', 'pending')|list|length }}</h4>
+            <p class="text-muted">Pending</p>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="card text-center">
+          <div class="card-body">
+            <i class="fas fa-check-circle fa-2x text-success mb-2"></i>
+            <h4>{{ complaints|selectattr('status', 'equalto', 'resolved')|list|length }}</h4>
+            <p class="text-muted">Resolved</p>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="card text-center">
+          <div class="card-body">
+            <i class="fas fa-times-circle fa-2x text-danger mb-2"></i>
+            <h4>{{ complaints|selectattr('status', 'equalto', 'closed')|list|length }}</h4>
+            <p class="text-muted">Closed</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="row g-4 mb-4">
+      <div class="col-12">
+        <div class="card">
+          <div class="card-body">
+            <div class="row">
+              <div class="col-md-4">
+                <label for="statusFilter" class="form-label">Filter by Status</label>
+                <select class="form-select" id="statusFilter" onchange="filterComplaints()">
+                  <option value="">All Status</option>
+                  <option value="pending">Pending</option>
+                  <option value="in_progress">In Progress</option>
+                  <option value="resolved">Resolved</option>
+                  <option value="closed">Closed</option>
+                </select>
+              </div>
+              <div class="col-md-4">
+                <label for="priorityFilter" class="form-label">Filter by Priority</label>
+                <select class="form-select" id="priorityFilter" onchange="filterComplaints()">
+                  <option value="">All Priority</option>
+                  <option value="low">Low</option>
+                  <option value="medium">Medium</option>
+                  <option value="high">High</option>
+                  <option value="urgent">Urgent</option>
+                </select>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">&nbsp;</label>
+                <button class="btn btn-outline-secondary d-block" onclick="clearFilters()">
+                  <i class="fas fa-times me-1"></i>Clear Filters
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Complaints List -->
+    <div class="row g-4">
+      <div class="col-12">
+        <div class="card">
+          <div class="card-header">
+            <h5 class="mb-0">
+              <i class="fas fa-list me-2"></i>All Complaints
+            </h5>
+          </div>
+          <div class="card-body">
+            {% if complaints %}
+              <div class="accordion" id="complaintsAccordion">
+                {% for complaint in complaints %}
+                <div class="accordion-item" data-status="{{ complaint.status }}" data-priority="{{ complaint.priority }}">
+                  <h2 class="accordion-header" id="heading{{ complaint.id }}">
+                    <button class="accordion-button {{ 'collapsed' if not loop.first else '' }}" type="button" data-bs-toggle="collapse" data-bs-target="#collapse{{ complaint.id }}" aria-expanded="{{ 'true' if loop.first else 'false' }}" aria-controls="collapse{{ complaint.id }}">
+                      <div class="d-flex w-100 justify-content-between">
+                        <div>
+                          <strong>{{ complaint.subject }}</strong>
+                          <br>
+                          <small class="text-muted">{{ complaint.name }} - {{ complaint.email }}</small>
+                        </div>
+                        <div class="text-end">
+                          <span class="badge bg-{{ 'warning' if complaint.status == 'pending' else 'info' if complaint.status == 'in_progress' else 'success' if complaint.status == 'resolved' else 'secondary' }} me-2">
+                            {{ complaint.status|title }}
+                          </span>
+                          <span class="badge bg-{{ 'success' if complaint.priority == 'low' else 'warning' if complaint.priority == 'medium' else 'danger' if complaint.priority == 'high' else 'dark' }}">
+                            {{ complaint.priority|title }}
+                          </span>
+                        </div>
+                      </div>
+                    </button>
+                  </h2>
+                  <div id="collapse{{ complaint.id }}" class="accordion-collapse collapse {{ 'show' if loop.first else '' }}" aria-labelledby="heading{{ complaint.id }}" data-bs-parent="#complaintsAccordion">
+                    <div class="accordion-body">
+                      <div class="row">
+                        <div class="col-md-8">
+                          <h6>Complaint Details</h6>
+                          <p class="mb-3">{{ complaint.message }}</p>
+                          <div class="mb-3">
+                            <strong>Customer:</strong> {{ complaint.name }} ({{ complaint.email }})
+                            <br>
+                            <strong>Phone:</strong> {{ complaint.phone }}
+                            <br>
+                            <strong>Submitted:</strong> {{ complaint.created_at.strftime('%Y-%m-%d %H:%M') }}
+                          </div>
+                          {% if complaint.response %}
+                            <div class="alert alert-info">
+                              <h6>Admin Response:</h6>
+                              <p>{{ complaint.response }}</p>
+                              <small class="text-muted">Responded on {{ complaint.responded_at.strftime('%Y-%m-%d %H:%M') }}</small>
+                            </div>
+                          {% endif %}
+                        </div>
+                        <div class="col-md-4">
+                          <h6>Actions</h6>
+                          {% if complaint.status == 'pending' %}
+                            <button class="btn btn-primary btn-sm mb-2 w-100" onclick="respondToComplaint({{ complaint.id }})">
+                              <i class="fas fa-reply me-1"></i>Respond
+                            </button>
+                          {% elif complaint.status == 'in_progress' %}
+                            <button class="btn btn-success btn-sm mb-2 w-100" onclick="markAsResolved({{ complaint.id }})">
+                              <i class="fas fa-check me-1"></i>Mark Resolved
+                            </button>
+                          {% endif %}
+                          {% if complaint.status != 'closed' %}
+                            <button class="btn btn-outline-danger btn-sm mb-2 w-100" onclick="closeComplaint({{ complaint.id }})">
+                              <i class="fas fa-times me-1"></i>Close
+                            </button>
+                          {% endif %}
+                          <button class="btn btn-outline-info btn-sm w-100" onclick="viewComplaintDetails({{ complaint.id }})">
+                            <i class="fas fa-eye me-1"></i>View Details
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                {% endfor %}
+              </div>
+            {% else %}
+              <div class="alert alert-info">
+                <i class="fas fa-info-circle me-2"></i>No complaints found.
+              </div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="bg-dark text-light py-4 mt-5">
+    <div class="container text-center">
+      <p>&copy; {{ datetime.utcnow().year }} AutoCare Comprehensive System. All rights reserved.</p>
+    </div>
+  </footer>
+
+  <script>
+    function respondToComplaint(complaintId) {
+      window.location.href = `/admin/respond_complaint/${complaintId}`;
+    }
+
+    function markAsResolved(complaintId) {
+      if (confirm('Mark this complaint as resolved?')) {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = `/admin/update_complaint_status/${complaintId}`;
+
+        const statusInput = document.createElement('input');
+        statusInput.type = 'hidden';
+        statusInput.name = 'status';
+        statusInput.value = 'resolved';
+
+        form.appendChild(statusInput);
+        document.body.appendChild(form);
+        form.submit();
+      }
+    }
+
+    function closeComplaint(complaintId) {
+      if (confirm('Close this complaint? This action cannot be undone.')) {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = `/admin/update_complaint_status/${complaintId}`;
+
+        const statusInput = document.createElement('input');
+        statusInput.type = 'hidden';
+        statusInput.name = 'status';
+        statusInput.value = 'closed';
+
+        form.appendChild(statusInput);
+        document.body.appendChild(form);
+        form.submit();
+      }
+    }
+
+    function viewComplaintDetails(complaintId) {
+      window.location.href = `/admin/complaint_details/${complaintId}`;
+    }
+
+    function filterComplaints() {
+      const statusFilter = document.getElementById('statusFilter').value;
+      const priorityFilter = document.getElementById('priorityFilter').value;
+
+      const items = document.querySelectorAll('.accordion-item');
+
+      items.forEach(item => {
+        const status = item.dataset.status;
+        const priority = item.dataset.priority;
+
+        let show = true;
+
+        if (statusFilter && status !== statusFilter) {
+          show = false;
+        }
+
+        if (priorityFilter && priority !== priorityFilter) {
+          show = false;
+        }
+
+        item.style.display = show ? '' : 'none';
+      });
+    }
+
+    function clearFilters() {
+      document.getElementById('statusFilter').value = '';
+      document.getElementById('priorityFilter').value = '';
+      filterComplaints();
+    }
+  </script>
+
+  <!-- Custom JS -->
+  <script src="{{ url_for('static', filename='js/script_fixed.js') }}"></script>
+</body>
+</html>

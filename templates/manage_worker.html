@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}Manage Workers - AutoCare{% endblock %}
+{% block content %}
+<div class="container py-5">
+  <h2 class="mb-4 text-center">👷 Manage Workers</h2>
+  
+  <div class="card shadow-sm p-4">
+    {% if workers %}
+      <table class="table table-bordered table-hover align-middle">
+        <thead class="table-dark">
+          <tr>
+            <th>ID</th>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Workshop</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for worker in workers %}
+          <tr>
+            <td>{{ worker.id }}</td>
+            <td>{{ worker.name }}</td>
+            <td>{{ worker.email }}</td>
+            <td>{{ worker.workshop_name }}</td>
+            <td>
+              {% if worker.active %}
+                <span class="badge bg-success">Active</span>
+              {% else %}
+                <span class="badge bg-secondary">Inactive</span>
+              {% endif %}
+            </td>
+            <td>
+              <a href="{{ url_for('edit_worker', worker_id=worker.id) }}" class="btn btn-sm btn-primary">Edit</a>
+              <a href="{{ url_for('delete_worker', worker_id=worker.id) }}" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure?')">Delete</a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <p class="text-muted text-center">No workers found.</p>
+    {% endif %}
+  </div>
+
+  <div class="text-center mt-3">
+    <a href="{{ url_for('add_worker') }}" class="btn btn-success">➕ Add New Worker</a>
+  </div>
+</div>
+{% endblock %}

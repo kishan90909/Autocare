@@ -1,0 +1,167 @@
+{% extends "base.html" %}
+
+{% block title %}Invoice #{{ invoice_data.booking_id }} - AutoCare{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <!-- Sidebar (Customer Panel - shown for all roles but customized) -->
+        <nav class="col-md-2 d-none d-md-block bg-light sidebar">
+            <div class="sidebar-sticky">
+                <h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-4 mb-1 text-muted">
+                    <span>Invoice Panel</span>
+                </h6>
+                <ul class="nav flex-column">
+                    <!-- Role-specific sidebar links can be overridden -->
+                </ul>
+            </div>
+        </nav>
+
+        <!-- Main content - EXACT customer layout -->
+        <main role="main" class="col-md-9 ml-sm-auto col-lg-10 px-4">
+            <!-- Role-specific header buttons (overridden by child templates) -->
+            <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                <h1 class="h2">Invoice #{{ invoice_data.booking_id }}</h1>
+                <div class="btn-toolbar mb-2 mb-md-0">
+                    <!-- Buttons injected by child templates -->
+                </div>
+            </div>
+
+            <!-- EXACT customer invoice preview card -->
+            <div class="row">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header bg-primary text-white">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <h4 class="mb-0">AutoCare Services</h4>
+                                    <p class="mb-0">123 Main Street, Vadodara - 390001</p>
+                                    <p class="mb-0">Phone: 989691797 | Email: info@autocare.com</p>
+                                </div>
+                                <div class="col-md-6 text-right">
+                                    <h5 class="mb-0">Invoice #INV-{{ "%04d"|format(invoice_data.booking_id) }}</h5>
+                                    <p class="mb-0">Date: {{ invoice_data.booking_date.strftime('%Y-%m-%d') }}</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card-body">
+                            <!-- Customer Information - EXACT -->
+                            <div class="row mb-4">
+                                <div class="col-md-6">
+                                    <h6>Bill To:</h6>
+                                    <p class="mb-1"><strong>{{ invoice_data.customer_name }}</strong></p>
+                                    <p class="mb-1">{{ invoice_data.customer_email }}</p>
+                                    {% if invoice_data.customer_phone %}
+                                    <p class="mb-1">Phone: {{ invoice_data.customer_phone }}</p>
+                                    {% endif %}
+                                    {% if invoice_data.customer_address %}
+                                    <p class="mb-0">Address: {{ invoice_data.customer_address }}</p>
+                                    {% endif %}
+                                </div>
+                                <div class="col-md-6">
+                                    <h6>Booking Details:</h6>
+                                    <p class="mb-1">Booking ID: #{{ invoice_data.booking_id }}</p>
+                                    <p class="mb-1">Booking Date: {{ invoice_data.booking_date.strftime('%Y-%m-%d') }}</p>
+                                    {% if invoice_data.completion_date %}
+                                    <p class="mb-1">Completion Date: {{ invoice_data.completion_date.strftime('%Y-%m-%d') }}</p>
+                                    {% endif %}
+                                    {% if invoice_data.vehicle_info %}
+                                    <p class="mb-0">Vehicle: {{ invoice_data.vehicle_info }}</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <!-- Services Table - EXACT customer format -->
+                            <div class="row mb-4">
+                                <div class="col-12">
+                                    <h6>Services:</h6>
+                                    <div class="table-responsive">
+                                        <table class="table table-bordered">
+                                            <thead class="thead-light">
+                                                <tr>
+                                                    <th>Sr. No.</th>
+                                                    <th>Service Description</th>
+                                                    <th>Quantity</th>
+                                                    <th>Rate</th>
+                                                    <th>Amount</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {% for service in invoice_data.services %}
+                                                <tr>
+                                                    <td>{{ loop.index }}</td>
+                                                    <td>{{ service.name }}</td>
+                                                    <td>1</td>
+                                                    <td>₹{{ "%.2f"|format(service.price) }}</td>
+                                                    <td>₹{{ "%.2f"|format(service.price) }}</td>
+                                                </tr>
+                                                {% endfor %}
+                                                <tr class="font-weight-bold">
+                                                    <td colspan="4" class="text-right">Total Amount</td>
+                                                    <td>₹{{ "%.2f"|format(invoice_data.total_amount) }}</td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Workshop Information - EXACT -->
+                            {% if invoice_data.workshop_name %}
+                            <div class="row mb-4">
+                                <div class="col-12">
+                                    <h6>Workshop Information:</h6>
+                                    <p class="mb-1"><strong>{{ invoice_data.workshop_name }}</strong></p>
+                                    {% if invoice_data.workshop_address %}
+                                    <p class="mb-1">Address: {{ invoice_data.workshop_address }}</p>
+                                    {% endif %}
+                                    {% if invoice_data.workshop_phone %}
+                                    <p class="mb-0">Phone: {{ invoice_data.workshop_phone }}</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            {% endif %}
+
+                            <!-- Payment Information - EXACT -->
+                            <div class="row mb-4">
+                                <div class="col-12">
+                                    <h6>Payment Information:</h6>
+                                    <p class="mb-1">Payment Status: <span class="badge badge-success">Completed</span></p>
+                                    {% if invoice_data.payment_id %}
+                                    <p class="mb-1">Payment ID: {{ invoice_data.payment_id }}</p>
+                                    {% endif %}
+                                    <p class="mb-0">Amount Due: ₹{{ "%.2f"|format(invoice_data.total_amount) }}</p>
+                                </div>
+                            </div>
+
+                            <!-- QR Code Section - EXACT -->
+                            <div class="row mb-4">
+                                <div class="col-12 text-center">
+                                    <h6>QR Code Verification</h6>
+                                    <div class="alert alert-info">
+                                        <i class="fas fa-qrcode me-2"></i>
+                                        <strong>QR Code Included in PDF:</strong> A verification QR code containing booking details is embedded in your downloaded PDF invoice.
+                                    </div>
+                                    <p class="small text-muted mt-2">
+                                        Booking #{{ invoice_data.booking_id }} - Amount: ₹{{ "%.2f"|format(invoice_data.total_amount) }}
+                                    </p>
+                                </div>
+                            </div>
+
+                            <!-- Thank You Note - EXACT -->
+                            <div class="row">
+                                <div class="col-12 text-center">
+                                    <p class="mb-0">Thank you for choosing AutoCare Services!</p>
+                                    <small class="text-muted">This invoice was generated on {{ invoice_data.booking_date.strftime('%Y-%m-%d %H:%M') }}</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+</div>
+{% endblock %}
+
