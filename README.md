@@ -1,7 +1,4 @@
-# 🚀 Enhanced AutoCare System - INTEGRATED VERSION
-
-
-# 🚗 Enhanced AutoCare System - Integrated Version
+# 🚗 Enhanced AutoCare System - INTEGRATED VERSION
 
 <div align="center">
   <h3>
