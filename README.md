@@ -238,4 +238,5 @@ For support or questions about the Enhanced AutoCare System:
 **🎉 Congratulations! Your Enhanced AutoCare System is ready for production use!**
 
 *Built with ❤️ using Flask, Python, and modern web technologies*
-*Develop By Kishan Patel*
+
+**Develop By Kishan Patel**
